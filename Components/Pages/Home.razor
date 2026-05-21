@@ -1,0 +1,34 @@
+@page "/"
+@inject CustomAuthStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var role = user.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+            switch (role)
+            {
+                case "Admin":
+                    Navigation.NavigateTo("/admin/dashboard", replace: true);
+                    break;
+                case "Teacher":
+                    Navigation.NavigateTo("/teacher/dashboard", replace: true);
+                    break;
+                case "Student":
+                default:
+                    Navigation.NavigateTo("/student/dashboard", replace: true);
+                    break;
+            }
+        }
+        else
+        {
+            Navigation.NavigateTo("/login", replace: true);
+        }
+    }
+}

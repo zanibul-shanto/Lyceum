@@ -1,0 +1,45 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+
+@if (IsAuthPage())
+{
+    <main class="auth-bg">
+        <article class="w-100 m-0 p-0 d-flex justify-content-center">
+            @Body
+        </article>
+    </main>
+}
+else
+{
+    <div class="page">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar">
+            <NavMenu />
+        </div>
+
+        <!-- Main Body Area -->
+        <main class="main-content-area">
+            <article class="w-100 m-0 p-0">
+                @Body
+            </article>
+        </main>
+    </div>
+}
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+@code {
+    private bool IsAuthPage()
+    {
+        var relativePath = Navigation.ToBaseRelativePath(Navigation.Uri).ToLower();
+        if (relativePath.Contains("?"))
+        {
+            relativePath = relativePath.Substring(0, relativePath.IndexOf("?"));
+        }
+        return relativePath == "login" || relativePath == "register";
+    }
+}

@@ -1,0 +1,164 @@
+@page "/register"
+@inject UserService UserService
+@inject NavigationManager Navigation
+
+<PageTitle>Register - Lyceum</PageTitle>
+
+<div class="auth-card-modern">
+    <div class="logo-container">
+        <div class="logo-box-modern">L</div>
+        <span class="logo-text-modern">Lyceum</span>
+    </div>
+
+    <h1 class="auth-title-modern">Create your account</h1>
+    <p class="auth-subtitle-modern">Join the Lyceum Management System</p>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="auth-alert-modern mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill auth-alert-icon"></i>
+            <div>@errorMessage</div>
+        </div>
+    }
+
+    @if (isSuccess)
+    {
+        <div class="auth-success-modern mb-4" role="alert">
+            <i class="bi bi-check-circle-fill auth-success-icon"></i>
+            <h5 class="fw-bold mb-2">Registration Successful!</h5>
+            <p class="small mb-3 text-secondary">Your account has been created. You can now sign in using your credentials.</p>
+            <a href="/login" class="btn-success-modern">
+                Go to Login
+            </a>
+        </div>
+    }
+    else
+    {
+        <EditForm Model="registerModel" OnValidSubmit="HandleRegister" FormName="RegisterForm">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label class="label-modern">Username</label>
+                <InputText @bind-Value="registerModel.Username" class="input-modern" placeholder="Choose a username" />
+                <ValidationMessage For="() => registerModel.Username" />
+            </div>
+
+            <div class="mb-3">
+                <label class="label-modern">Full Name</label>
+                <InputText @bind-Value="registerModel.FullName" class="input-modern" placeholder="Enter your full name" />
+                <ValidationMessage For="() => registerModel.FullName" />
+            </div>
+
+            <div class="mb-3">
+                <label class="label-modern">Email Address</label>
+                <InputText @bind-Value="registerModel.Email" class="input-modern" placeholder="you@university.edu" />
+                <ValidationMessage For="() => registerModel.Email" />
+            </div>
+
+            <div class="mb-3">
+                <label class="label-modern">Role</label>
+                <InputSelect @bind-Value="registerModel.Role" class="input-modern">
+                    <option value="Student">Student</option>
+                    <option value="Teacher">Teacher</option>
+                    <option value="Admin">Administrator</option>
+                </InputSelect>
+            </div>
+
+            <div class="mb-3">
+                <label class="label-modern">Password</label>
+                <InputText type="password" @bind-Value="registerModel.Password" class="input-modern" placeholder="Choose a password" />
+                <ValidationMessage For="() => registerModel.Password" />
+            </div>
+
+            <div class="mb-4">
+                <label class="label-modern">Confirm Password</label>
+                <InputText type="password" @bind-Value="registerModel.ConfirmPassword" class="input-modern" placeholder="Re-enter password" />
+                <ValidationMessage For="() => registerModel.ConfirmPassword" />
+            </div>
+
+            <button type="submit" class="btn-signin-modern" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span>Registering...</span>
+                }
+                else
+                {
+                    <span>Create Account</span>
+                }
+            </button>
+        </EditForm>
+
+        <div class="auth-footer-text">
+            <span>Already have an account? </span>
+            <a href="/login" class="link-signup-modern">Sign in</a>
+        </div>
+    }
+</div>
+
+@code {
+    private RegisterViewModel registerModel = new();
+    private string? errorMessage;
+    private bool isLoading;
+    private bool isSuccess;
+
+    private async Task HandleRegister()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            if (registerModel.Password != registerModel.ConfirmPassword)
+            {
+                errorMessage = "Passwords do not match.";
+                return;
+            }
+
+            var newUser = new User
+            {
+                Username = registerModel.Username,
+                FullName = registerModel.FullName,
+                Email = registerModel.Email,
+                Role = Enum.Parse<UserRole>(registerModel.Role)
+            };
+
+            await UserService.RegisterAsync(newUser, registerModel.Password);
+            isSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    public class RegisterViewModel
+    {
+        [Required(ErrorMessage = "Username is required")]
+        [StringLength(50, MinimumLength = 3, ErrorMessage = "Username must be between 3 and 50 characters")]
+        public string Username { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Full Name is required")]
+        [StringLength(100, ErrorMessage = "Full name cannot exceed 100 characters")]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email address")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        public string Role { get; set; } = "Student";
+
+        [Required(ErrorMessage = "Password is required")]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters")]
+        public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Confirm Password is required")]
+        [Compare("Password", ErrorMessage = "Passwords do not match")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}

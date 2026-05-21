@@ -1,0 +1,830 @@
+/* ==========================================================================
+   Lyceum Global Design System & Variables
+   ========================================================================== */
+:root {
+    /* Premium Slate Navy & Blue Palette */
+    --primary: #3182ce;
+    --primary-hover: #2b6cb0;
+    --primary-light: #ebf8ff;
+    --success: #10b981;
+    --success-bg: #f0fdf4;
+    --success-text: #15803d;
+    --warning: #f59e0b;
+    --warning-bg: #fffbeb;
+    --warning-text: #b45309;
+    --danger: #ef4444;
+    --danger-bg: #fef2f2;
+    --danger-text: #b91c1c;
+    
+    /* Neutral Shades */
+    --dark-navy: #0f172a;
+    --slate-800: #1e293b;
+    --slate-700: #334155;
+    --slate-600: #475569;
+    --slate-500: #64748b;
+    --slate-400: #94a3b8;
+    --slate-300: #cbd5e1;
+    --slate-200: #e2e8f0;
+    --slate-100: #f1f5f9;
+    --light-bg: #f8fafc;
+    
+    /* Shadows */
+    --premium-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -2px rgba(0, 0, 0, 0.03), 0 0 1px 0 rgba(0, 0, 0, 0.05);
+    --hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+}
+
+/* Base Styles */
+html, body {
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    background-color: var(--light-bg);
+    color: #1e293b;
+    font-size: 14.5px;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    color: var(--dark-navy);
+}
+
+/* ==========================================================================
+   Modern Authentication Theme (Login & Registration Page)
+   ========================================================================== */
+.auth-bg {
+    background-color: #f0f4f8;
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+}
+
+.auth-card-modern {
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.02), 0 8px 10px -6px rgba(0, 0, 0, 0.02), 0 0 1px 1px rgba(0, 0, 0, 0.02);
+    width: 100%;
+    max-width: 460px;
+    padding: 3.5rem 3rem;
+    border: 1px solid #e2e8f0;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 2rem;
+}
+
+.logo-box-modern {
+    background-color: var(--dark-navy);
+    color: #ffffff;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 1.15rem;
+}
+
+.logo-text-modern {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--dark-navy);
+    letter-spacing: -0.02em;
+}
+
+.auth-title-modern {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--dark-navy);
+    letter-spacing: -0.02em;
+    margin-bottom: 0.35rem;
+}
+
+.auth-subtitle-modern {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.88rem;
+    color: var(--slate-500);
+    margin-bottom: 2rem;
+}
+
+.label-modern {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--slate-700);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.input-modern {
+    background-color: #f8fafc;
+    border: 1px solid var(--slate-200);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #1a202c;
+    width: 100%;
+    transition: all 0.2s ease-in-out;
+}
+
+.input-modern::placeholder {
+    color: #cbd5e1;
+    font-size: 0.9rem;
+}
+
+.input-modern:focus {
+    background-color: #ffffff;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.12);
+    outline: none;
+}
+
+.link-forgot {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--primary);
+    text-decoration: none;
+    display: inline-block;
+    transition: color 0.15s ease-in-out;
+}
+
+.link-forgot:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+.btn-signin-modern {
+    background-color: var(--primary);
+    color: #ffffff;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border: none;
+    border-radius: 8px;
+    padding: 0.85rem 1.5rem;
+    width: 100%;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-signin-modern:hover:not(:disabled) {
+    background-color: var(--primary-hover);
+    box-shadow: 0 4px 12px rgba(49, 130, 206, 0.15);
+}
+
+.btn-signin-modern:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.btn-signin-modern:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.auth-footer-text {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.85rem;
+    color: var(--slate-500);
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.link-signup-modern {
+    color: var(--primary);
+    font-weight: 700;
+    text-decoration: none;
+    transition: color 0.15s ease-in-out;
+}
+
+.link-signup-modern:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+.auth-alert-modern {
+    border-radius: 8px;
+    border: none !important;
+    background-color: #fff5f5;
+    color: #c53030;
+    font-size: 0.9rem;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.auth-alert-icon {
+    font-size: 1.15rem;
+    color: #e53e3e;
+    flex-shrink: 0;
+}
+
+.auth-success-modern {
+    border-radius: 12px;
+    border: none !important;
+    background-color: #f0fdf4;
+    color: #15803d;
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.auth-success-icon {
+    font-size: 3rem;
+    color: #22c55e;
+    margin-bottom: 0.75rem;
+}
+
+.btn-success-modern {
+    background-color: #22c55e;
+    color: #ffffff;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    width: 100%;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    margin-top: 1rem;
+}
+
+.btn-success-modern:hover {
+    background-color: #16a34a;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+}
+
+/* ==========================================================================
+   Premium Sidebar Layout (Side Navigation)
+   ========================================================================== */
+.sidebar {
+    background-color: var(--dark-navy) !important;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100vh;
+}
+
+.sidebar-brand {
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.logo-box-sidebar {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 1.15rem;
+}
+
+.logo-text-sidebar {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+}
+
+.sidebar-menu-scrollable {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem 0;
+}
+
+.sidebar-section-label {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.35);
+    padding: 0.5rem 1.5rem;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+}
+
+.sidebar-nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 1rem;
+    margin: 0.2rem 0.75rem;
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.sidebar-nav-link:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-nav-link.active {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.08);
+    font-weight: 700;
+}
+
+.sidebar-badge-pill {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 9999px;
+}
+
+/* Sidebar Footer User Details */
+.sidebar-profile-block {
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-profile-info {
+    flex: 1;
+    overflow: hidden;
+}
+
+.sidebar-profile-name {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: #ffffff;
+    text-truncate: true;
+    line-height: 1.2;
+}
+
+.sidebar-profile-role {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.45);
+    line-height: 1.2;
+}
+
+.sidebar-logout-block {
+    padding: 0.5rem 1.5rem 1.5rem 1.5rem;
+}
+
+.sidebar-logout-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.45);
+    text-decoration: none;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.88rem;
+    transition: color 0.15s ease-in-out;
+}
+
+.sidebar-logout-link:hover {
+    color: #ef4444;
+}
+
+/* ==========================================================================
+   Premium Content & Page Layout System
+   ========================================================================== */
+.main-content-area {
+    background-color: var(--light-bg);
+    min-height: 100vh;
+    padding: 1.5rem 2rem 3rem 2rem;
+}
+
+/* Top Page Header */
+.premium-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 0.5rem;
+}
+
+.page-title-modern {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 1.6rem;
+    color: var(--dark-navy);
+    margin-bottom: 0.15rem;
+}
+
+.page-subtitle-modern {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.85rem;
+    color: var(--slate-500);
+}
+
+.header-right-block {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* KPI Badges */
+.header-role-pill {
+    background-color: var(--success-bg);
+    color: var(--success-text);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 0.35rem 0.8rem;
+    border-radius: 6px;
+    letter-spacing: 0.02em;
+}
+
+.header-bell-box {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+    border: 1px solid var(--slate-200);
+    border-radius: 8px;
+    color: var(--slate-600);
+    font-size: 1.15rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.header-bell-box:hover {
+    background-color: var(--slate-100);
+    color: var(--dark-navy);
+    border-color: var(--slate-300);
+}
+
+
+.header-profile-card {
+    background-color: #ffffff;
+    border: 1px solid var(--slate-200);
+    box-shadow: var(--premium-shadow);
+    border-radius: 8px;
+    padding: 0.4rem 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.header-avatar-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: rgba(49, 130, 206, 0.08);
+    color: var(--primary);
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-user-name {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--dark-navy);
+    line-height: 1.1;
+}
+
+.header-user-role {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.72rem;
+    color: var(--slate-500);
+    line-height: 1.1;
+}
+
+/* ==========================================================================
+   Dashboard Widgets & Cards (mockup layout)
+   ========================================================================== */
+.kpi-card {
+    background-color: #ffffff;
+    border-radius: 10px;
+    border: 1px solid var(--slate-200);
+    box-shadow: var(--premium-shadow);
+    padding: 1.5rem;
+    height: 100%;
+}
+
+.kpi-label {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: var(--slate-500);
+    text-transform: uppercase;
+    margin-bottom: 0.65rem;
+}
+
+.kpi-number {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 2.2rem;
+    color: var(--dark-navy);
+    line-height: 1;
+    margin-bottom: 0.65rem;
+}
+
+.kpi-footer {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.82rem;
+    color: var(--slate-600);
+}
+
+.badge-spring-kpi {
+    background-color: #3b82f6;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+}
+
+/* My Courses Section Cards */
+.course-card-modern {
+    background-color: #ffffff;
+    border-radius: 10px;
+    border: 1px solid var(--slate-200);
+    box-shadow: var(--premium-shadow);
+    padding: 1.5rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.course-code-modern {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: var(--slate-500);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 0.35rem;
+}
+
+.course-title-modern {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--dark-navy);
+    margin-bottom: 1.25rem;
+}
+
+.course-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.75rem;
+    color: var(--slate-500);
+    font-weight: 600;
+    margin-bottom: 0.45rem;
+}
+
+.course-progress-bar-container {
+    background-color: var(--slate-100);
+    height: 5px;
+    border-radius: 10px;
+    width: 100%;
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+}
+
+.course-progress-bar-fill {
+    background-color: #3b82f6;
+    height: 100%;
+    border-radius: 10px;
+}
+
+.course-footer-modern {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.78rem;
+    color: var(--slate-500);
+}
+
+/* Bottom Grades Table Card */
+.grades-card-modern {
+    background-color: #ffffff;
+    border-radius: 10px;
+    border: 1px solid var(--slate-200);
+    box-shadow: var(--premium-shadow);
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.grades-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.grades-card-title {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--dark-navy);
+    margin-bottom: 0;
+}
+
+.grades-card-link {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--primary);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    transition: color 0.15s ease-in-out;
+}
+
+.grades-card-link:hover {
+    color: var(--primary-hover);
+}
+
+/* Modern Minimalist Table */
+.modern-table {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: collapse;
+}
+
+.modern-table th {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--slate-500);
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--slate-200);
+    text-align: left;
+}
+
+.modern-table td {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.88rem;
+    color: var(--slate-700);
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+    vertical-align: middle;
+}
+
+.modern-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.modern-table tbody tr:hover {
+    background-color: var(--slate-100);
+}
+
+/* Modern Grade Badge Pill */
+.badge-grade-modern {
+    display: inline-block;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    text-align: center;
+    min-width: 28px;
+}
+
+.badge-grade-a {
+    background-color: var(--success-bg);
+    color: var(--success-text);
+}
+
+.badge-grade-b {
+    background-color: var(--primary-light);
+    color: var(--primary);
+}
+
+.badge-grade-c {
+    background-color: var(--warning-bg);
+    color: var(--warning-text);
+}
+
+.badge-grade-pending {
+    background-color: var(--slate-100);
+    color: var(--slate-500);
+}
+
+/* Modern Status Badge Pill */
+.badge-status-modern {
+    display: inline-block;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    text-transform: capitalize;
+}
+
+.badge-status-graded {
+    background-color: var(--success-bg);
+    color: var(--success-text);
+}
+
+.badge-status-pending {
+    background-color: var(--warning-bg);
+    color: var(--warning-text);
+}
+
+/* ==========================================================================
+   Modals & Validation (Admin features etc.)
+   ========================================================================== */
+.custom-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.custom-modal-content {
+    background-color: white;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 600px;
+    overflow: hidden;
+}
+
+.validation-message {
+    color: var(--danger);
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    font-weight: 500;
+}
+
+.input-validation-error {
+    border-color: var(--danger) !important;
+}
+
+.input-validation-error:focus {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15) !important;
+}

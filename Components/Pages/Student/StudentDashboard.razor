@@ -1,0 +1,258 @@
+@page "/student/dashboard"
+@inject UserService UserService
+@inject CustomAuthStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Student Dashboard - Lyceum</PageTitle>
+
+<AuthorizeView Roles="Student" Context="authContext">
+    <Authorized>
+        <div class="container-fluid p-0">
+            <!-- Premium Seamless Page Header -->
+            <div class="premium-page-header">
+                <div>
+                    <h1 class="page-title-modern">Dashboard</h1>
+                    <div class="page-subtitle-modern">Spring 2026</div>
+                </div>
+                <div class="header-right-block">
+                    <span class="header-role-pill">Student</span>
+                    <!-- Outlined Header Profile Card matching new design -->
+                    <div class="header-profile-card">
+                        <div class="header-avatar-circle">
+                            @GetInitials(currentStudent?.FullName ?? "Alex Chen")
+                        </div>
+                        <div>
+                            <div class="header-user-name">@(currentStudent?.FullName ?? "Alex Chen")</div>
+                            <div class="header-user-role">Student</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top KPI Widgets Row (4 Cards) -->
+            <div class="row g-4 mb-4">
+                <!-- Enrolled Courses -->
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Enrolled Courses</div>
+                        <div class="kpi-number">6</div>
+                        <div class="kpi-footer text-secondary">
+                            <span class="badge-spring-kpi">Spring</span> 2026
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assignments Due -->
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Assignments Due</div>
+                        <div class="kpi-number">3</div>
+                        <div class="kpi-footer text-secondary">This week</div>
+                    </div>
+                </div>
+
+                <!-- Current GPA -->
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Current GPA</div>
+                        <div class="kpi-number">@(currentStudent?.GPA?.ToString("0.0") ?? "3.7")</div>
+                        <div class="kpi-footer text-secondary">
+                            <span class="text-success fw-bold">&uarr;</span> from last term
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Credits Earned -->
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Credits Earned</div>
+                        <div class="kpi-number">42</div>
+                        <div class="kpi-footer text-secondary">of 120 required</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle My Courses Section (3 Cards Row) -->
+            <h5 class="fw-bold mb-3 mt-4 text-dark" style="font-family: 'Outfit', sans-serif;">My Courses</h5>
+            <div class="row g-4 mb-4">
+                @foreach (var course in mockCourses)
+                {
+                    <div class="col-12 col-md-4">
+                        <div class="course-card-modern">
+                            <div>
+                                <div class="course-code-modern">@course.Code</div>
+                                <h6 class="course-title-modern">@course.Title</h6>
+                            </div>
+                            <div>
+                                <div class="course-progress-header">
+                                    <span>Progress</span>
+                                    <span>@course.Progress%</span>
+                                </div>
+                                <div class="course-progress-bar-container">
+                                    <div class="course-progress-bar-fill" style="width: @course.Progress%;"></div>
+                                </div>
+                                <div class="course-footer-modern">
+                                    Next: @course.NextTask
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Bottom Recent Grades Section (Table Widget) -->
+            <div class="grades-card-modern">
+                <div class="grades-card-header">
+                    <h5 class="grades-card-title">Recent Grades</h5>
+                    <a href="student/grades" class="grades-card-link">View all <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <div class="table-responsive">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Course</th>
+                                <th>Assignment</th>
+                                <th>Score</th>
+                                <th>Grade</th>
+                                <th>Submitted</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var grade in recentGrades)
+                            {
+                                <tr>
+                                    <td class="fw-bold text-dark">@grade.Course</td>
+                                    <td>@grade.Assignment</td>
+                                    <td class="font-monospace">@grade.Score</td>
+                                    <td>
+                                        <span class="badge-grade-modern @GetGradeClass(grade.Grade)">
+                                            @grade.Grade
+                                        </span>
+                                    </td>
+                                    <td>@grade.Submitted</td>
+                                    <td>
+                                        <span class="badge-status-modern @GetStatusClass(grade.Status)">
+                                            @grade.Status
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <!-- Premium Loader during pre-render session loading -->
+        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 80vh;">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 text-secondary fw-semibold">Loading Student Portal...</p>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private User? currentStudent;
+    private List<MockCourse> mockCourses = new();
+    private List<MockGrade> recentGrades = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var username = authState.User.Identity?.Name;
+
+        if (!string.IsNullOrEmpty(username))
+        {
+            var allUsers = await UserService.GetAllUsersAsync();
+            currentStudent = allUsers.FirstOrDefault(u => u.Username.ToLower() == username.ToLower());
+        }
+
+        currentStudent ??= new User
+        {
+            FullName = "Alex Chen",
+            GPA = 3.7,
+            Role = UserRole.Student
+        };
+
+        LoadMockCourses();
+        LoadRecentGrades();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated != true)
+            {
+                Navigation.NavigateTo("/login");
+            }
+            else
+            {
+                var role = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                if (role != "Student")
+                {
+                    Navigation.NavigateTo("/login");
+                }
+            }
+        }
+    }
+
+    private void LoadMockCourses()
+    {
+        mockCourses = new List<MockCourse>
+        {
+            new("Intro to Computer Science", "CS 101", 72, "Lab 4 — due May 24"),
+            new("Linear Algebra", "MATH 201", 55, "Next: Problem Set 5 — due May 26"),
+            new("Technical Writing", "ENG 110", 40, "Next: Essay Draft — due May 28")
+        };
+    }
+
+    private void LoadRecentGrades()
+    {
+        recentGrades = new List<MockGrade>
+        {
+            new("CS 101", "Midterm Exam", "91 / 100", "A", "May 10", "graded"),
+            new("MATH 201", "Problem Set 4", "78 / 100", "B+", "May 8", "graded"),
+            new("ENG 110", "Essay Draft", "—", "—", "May 15", "pending"),
+            new("CS 101", "Lab 3", "88 / 100", "B+", "May 5", "graded"),
+            new("PHYS 101", "Quiz 5", "72 / 100", "C+", "May 3", "graded")
+        };
+    }
+
+    private string GetInitials(string fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "AC";
+        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0][0].ToString().ToUpper();
+        return (parts[0][0].ToString() + parts[^1][0].ToString()).ToUpper();
+    }
+
+    private string GetGradeClass(string grade)
+    {
+        return grade.Trim().ToUpper() switch
+        {
+            "A" or "A-" => "badge-grade-a",
+            "B+" or "B" or "B-" => "badge-grade-b",
+            "C+" or "C" or "C-" => "badge-grade-c",
+            _ => "badge-grade-pending"
+        };
+    }
+
+    private string GetStatusClass(string status)
+    {
+        return status.Trim().ToLower() switch
+        {
+            "graded" => "badge-status-graded",
+            "pending" => "badge-status-pending",
+            _ => "badge-status-pending"
+        };
+    }
+
+    public record MockCourse(string Title, string Code, int Progress, string NextTask);
+    public record MockGrade(string Course, string Assignment, string Score, string Grade, string Submitted, string Status);
+}

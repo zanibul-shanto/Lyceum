@@ -1,0 +1,56 @@
+/* Scoped Layout System for Lyceum Application */
+
+.page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+@media (min-width: 769px) {
+    .page {
+        flex-direction: row;
+    }
+
+    .sidebar {
+        width: 260px;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        flex-shrink: 0;
+    }
+}
+
+/* Blazor Default Error UI */
+#blazor-error-ui {
+    color-scheme: light only;
+    background: #fffbeb;
+    color: #b45309;
+    bottom: 0;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+    display: none;
+    left: 0;
+    padding: 0.75rem 1.5rem;
+    position: fixed;
+    width: 100%;
+    z-index: 2000;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 600;
+    border-top: 1px solid #fef3c7;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 1.5rem;
+    top: 0.75rem;
+    font-size: 1.1rem;
+}
