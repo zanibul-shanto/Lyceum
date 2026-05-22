@@ -1,0 +1,485 @@
+@page "/admin/courses"
+@inject CourseService CourseService
+@inject UserService UserService
+@inject CustomAuthStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Course Management - Lyceum</PageTitle>
+
+<AuthorizeView Roles="Admin" Context="authContext">
+    <Authorized>
+
+<div class="container-fluid py-4 px-xl-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold mb-1" style="color: var(--dark); font-size: 2.2rem;">Course Management</h1>
+            <p class="text-secondary mb-0">Create, schedule, and manage courses across all departments.</p>
+        </div>
+        <button @onclick="ShowAddModal" class="btn btn-primary-custom shadow-sm">
+            Add Course
+        </button>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="dashboard-card">
+                <div class="text-secondary small fw-semibold text-uppercase mb-1">Total Courses</div>
+                <h3 class="fw-bold mb-0 text-dark">@allCourses.Count</h3>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="dashboard-card">
+                <div class="text-secondary small fw-semibold text-uppercase mb-1">Active</div>
+                <h3 class="fw-bold mb-0 text-dark">@allCourses.Count(c => c.IsActive)</h3>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="dashboard-card">
+                <div class="text-secondary small fw-semibold text-uppercase mb-1">Inactive</div>
+                <h3 class="fw-bold mb-0 text-dark">@allCourses.Count(c => !c.IsActive)</h3>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="dashboard-card">
+                <div class="text-secondary small fw-semibold text-uppercase mb-1">Teachers Assigned</div>
+                <h3 class="fw-bold mb-0 text-dark">@allCourses.SelectMany(c => c.CourseTeachers).Select(ct => ct.TeacherId).Distinct().Count()</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Grid -->
+    <div class="dashboard-card p-4 mb-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+            <h4 class="fw-bold mb-0" style="color: var(--dark);">Course Directory</h4>
+
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <input type="text" @bind-value="searchTerm" @bind-value:event="oninput" @onkeyup="ApplyFilters"
+                       class="form-control form-control-custom py-2" placeholder="Search by name or code..."
+                       style="min-width: 250px;" />
+
+                <select class="form-select form-control-custom py-2" style="min-width: 150px;" @onchange="OnStatusFilterChanged">
+                    <option value="All">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+            </div>
+        </div>
+
+        <Grid TItem="Course"
+              Data="filteredCourses"
+              AllowPaging="true"
+              PageSize="10"
+              AllowSorting="true"
+              Responsive="true"
+              class="table custom-table">
+
+            <GridColumn TItem="Course" HeaderText="Active" Sortable="false"
+                        HeaderTextAlignment="Alignment.Center" TextAlignment="Alignment.Center">
+                <ChildContent Context="course">
+                    <div class="form-check form-switch mb-0 d-flex justify-content-center">
+                        <input class="form-check-input" type="checkbox" role="switch"
+                               checked="@course.IsActive"
+                               @onchange="() => ToggleActive(course)"
+                               title="@(course.IsActive ? "Deactivate" : "Activate")" />
+                    </div>
+                </ChildContent>
+            </GridColumn>
+
+            <GridColumn TItem="Course" HeaderText="Code" PropertyName="CourseCode" SortKeySelector="c => c.CourseCode">
+                <ChildContent Context="course">
+                    <span class="font-monospace fw-semibold text-primary">@course.CourseCode</span>
+                </ChildContent>
+            </GridColumn>
+
+            <GridColumn TItem="Course" HeaderText="Name" PropertyName="Name" SortKeySelector="c => c.Name">
+                <ChildContent Context="course">
+                    <div class="fw-bold text-dark">@course.Name</div>
+                    @if (!string.IsNullOrWhiteSpace(course.Description))
+                    {
+                        <div class="text-secondary small"
+                             style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                            @course.Description
+                        </div>
+                    }
+                </ChildContent>
+            </GridColumn>
+
+            <GridColumn TItem="Course" HeaderText="Schedule / Room" Sortable="false">
+                <ChildContent Context="course">
+                    <div class="small">
+                        @if (!string.IsNullOrWhiteSpace(course.Schedule))
+                        {
+                            <div>@course.Schedule</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(course.RoomNo))
+                        {
+                            <div class="text-secondary">@course.RoomNo</div>
+                        }
+                        @if (string.IsNullOrWhiteSpace(course.Schedule) && string.IsNullOrWhiteSpace(course.RoomNo))
+                        {
+                            <span class="text-secondary">—</span>
+                        }
+                    </div>
+                </ChildContent>
+            </GridColumn>
+
+            <GridColumn TItem="Course" HeaderText="Credits" SortKeySelector="c => c.Credits"
+                        HeaderTextAlignment="Alignment.Center" TextAlignment="Alignment.Center">
+                <ChildContent Context="course">
+                    <span class="badge bg-success-subtle text-success fw-normal">@course.Credits cr</span>
+                </ChildContent>
+            </GridColumn>
+
+            <GridColumn TItem="Course" HeaderText="Capacity" SortKeySelector="c => c.MaxCapacity"
+                        HeaderTextAlignment="Alignment.Center" TextAlignment="Alignment.Center">
+                <ChildContent Context="course">
+                    <span class="text-secondary small">@course.MaxCapacity</span>
+                </ChildContent>
+            </GridColumn>
+
+            <GridColumn TItem="Course" HeaderText="Teachers" Sortable="false">
+                <ChildContent Context="course">
+                    @if (!course.CourseTeachers.Any())
+                    {
+                        <span class="text-secondary small">—</span>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-wrap gap-1">
+                            @foreach (var ct in course.CourseTeachers.Take(2))
+                            {
+                                <span class="badge-role badge-teacher" style="font-size:0.72rem;">@ct.Teacher.FullName</span>
+                            }
+                            @if (course.CourseTeachers.Count > 2)
+                            {
+                                <span class="badge bg-secondary-subtle text-secondary" style="font-size:0.72rem;">
+                                    +@(course.CourseTeachers.Count - 2)
+                                </span>
+                            }
+                        </div>
+                    }
+                </ChildContent>
+            </GridColumn>
+
+            <GridColumn TItem="Course" HeaderText="Created" SortKeySelector="c => c.CreatedAt">
+                <ChildContent Context="course">
+                    <span class="text-secondary small">@course.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</span>
+                </ChildContent>
+            </GridColumn>
+
+            <GridColumn TItem="Course" HeaderText="" Sortable="false" TextAlignment="Alignment.End">
+                <ChildContent Context="course">
+                    <button @onclick="() => ShowEditModal(course)" class="btn btn-sm btn-outline-primary border-0 me-1">Edit</button>
+                    <button @onclick="() => ConfirmDelete(course)" class="btn btn-sm btn-outline-danger border-0">Delete</button>
+                </ChildContent>
+            </GridColumn>
+        </Grid>
+    </div>
+</div>
+
+<!-- Modal: Add / Edit Course -->
+@if (isCourseModalVisible)
+{
+    <div class="custom-modal-backdrop">
+        <div class="custom-modal-content" style="max-width: 680px;">
+            <div class="auth-header py-3 px-4 d-flex justify-content-between align-items-center">
+                <h4 class="fw-bold mb-0">@(editingCourse.Id == 0 ? "Add New Course" : "Edit Course")</h4>
+                <button type="button" class="btn-close btn-close-white" @onclick="CloseModal"></button>
+            </div>
+            <div class="auth-body p-4">
+                @if (!string.IsNullOrEmpty(modalError))
+                {
+                    <div class="alert alert-danger border-0 mb-3" style="border-radius: 8px;">@modalError</div>
+                }
+
+                <EditForm Model="editingCourse" OnValidSubmit="SaveCourse" FormName="CourseForm">
+                    <DataAnnotationsValidator />
+
+                    <div class="row g-3">
+                        <div class="col-12 col-md-8">
+                            <label class="form-label fw-semibold small text-secondary">Course Name</label>
+                            <InputText @bind-Value="editingCourse.Name" class="form-control form-control-custom" placeholder="e.g. Introduction to Computer Science" />
+                            <ValidationMessage For="() => editingCourse.Name" />
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold small text-secondary">Course Code</label>
+                            <InputText @bind-Value="editingCourse.CourseCode" class="form-control form-control-custom" placeholder="e.g. CS101" />
+                            <ValidationMessage For="() => editingCourse.CourseCode" />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-secondary">Description</label>
+                            <InputTextArea @bind-Value="editingCourse.Description" class="form-control form-control-custom" rows="2" placeholder="Brief course description..." />
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-secondary">Schedule</label>
+                            <InputText @bind-Value="editingCourse.Schedule" class="form-control form-control-custom" placeholder="e.g. Mon/Wed 9:00–10:30 AM" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small text-secondary">Room No.</label>
+                            <InputText @bind-Value="editingCourse.RoomNo" class="form-control form-control-custom" placeholder="e.g. Science Hall, Rm 302" />
+                        </div>
+
+                        <div class="col-6 col-md-3">
+                            <label class="form-label fw-semibold small text-secondary">Credits</label>
+                            <InputNumber @bind-Value="editingCourse.Credits" class="form-control form-control-custom" min="1" max="10" />
+                            <ValidationMessage For="() => editingCourse.Credits" />
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label fw-semibold small text-secondary">Max Capacity</label>
+                            <InputNumber @bind-Value="editingCourse.MaxCapacity" class="form-control form-control-custom" min="1" max="500" />
+                            <ValidationMessage For="() => editingCourse.MaxCapacity" />
+                        </div>
+                        <div class="col-12 col-md-6 d-flex align-items-end pb-1">
+                            <div class="form-check form-switch">
+                                <InputCheckbox @bind-Value="editingCourse.IsActive" class="form-check-input" id="isActiveCb" />
+                                <label class="form-check-label fw-semibold small text-secondary" for="isActiveCb">Course is Active</label>
+                            </div>
+                        </div>
+
+                        <!-- Teacher Assignment -->
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-secondary">Assign Teachers</label>
+                            @if (!allTeachers.Any())
+                            {
+                                <p class="text-secondary small mb-0">No teachers found. Add teacher accounts first.</p>
+                            }
+                            else
+                            {
+                                <SimpleMultiselect Options="teacherOptions"
+                                                   @bind-SelectedOptions="selectedTeacherNames"
+                                                   CanFilter="true" />
+                            }
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <button type="button" class="btn btn-secondary-custom" @onclick="CloseModal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-custom">Save Course</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal: Delete Confirmation -->
+@if (isDeleteModalVisible)
+{
+    <div class="custom-modal-backdrop">
+        <div class="custom-modal-content" style="max-width: 450px;">
+            <div class="auth-header bg-danger py-3 px-4 d-flex justify-content-between align-items-center"
+                 style="background: linear-gradient(135deg, var(--danger) 0%, var(--danger-hover) 100%);">
+                <h4 class="fw-bold mb-0">Confirm Deletion</h4>
+                <button type="button" class="btn-close btn-close-white" @onclick="CloseDeleteModal"></button>
+            </div>
+            <div class="auth-body p-4 text-center">
+                <h5 class="fw-bold mb-2">Delete Course?</h5>
+                <p class="text-secondary small mb-4">
+                    Are you sure you want to delete <strong>@courseToDelete?.Name</strong>
+                    (<span class="font-monospace">@courseToDelete?.CourseCode</span>)?
+                    This action cannot be undone.
+                </p>
+                <div class="d-flex justify-content-center gap-2">
+                    <button type="button" class="btn btn-secondary-custom px-4" @onclick="CloseDeleteModal">Cancel</button>
+                    <button type="button" class="btn btn-danger py-2 px-4 fw-semibold shadow-sm border-0"
+                            style="border-radius: 8px; background-color: var(--danger);" @onclick="DeleteCourse">
+                        Delete Permanently
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+    </Authorized>
+    <NotAuthorized>
+        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 80vh;">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 text-secondary fw-semibold">Loading Admin Portal...</p>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private List<Course> allCourses = [];
+    private List<Course> filteredCourses = [];
+    private List<User> allTeachers = [];
+
+    private string searchTerm = string.Empty;
+    private string statusFilter = "All";
+
+    // Modal state
+    private bool isCourseModalVisible;
+    private bool isDeleteModalVisible;
+    private Course editingCourse = new();
+    private Course? courseToDelete;
+    private string? modalError;
+    private HashSet<string> selectedTeacherNames = new();
+
+    private List<string> teacherOptions =>
+        allTeachers.Select(TeacherLabel).ToList();
+
+    private Dictionary<string, int> teacherNameToId =>
+        allTeachers.ToDictionary(TeacherLabel, t => t.Id);
+
+    private static string TeacherLabel(User t) =>
+        t.FullName + (string.IsNullOrWhiteSpace(t.Department) ? "" : $" ({t.Department})");
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated != true)
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+            var role = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            if (role != "Admin")
+                Navigation.NavigateTo("/login");
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        allCourses = await CourseService.GetAllAsync();
+        allTeachers = await UserService.GetUsersByRoleAsync(UserRole.Teacher);
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        var result = allCourses.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var q = searchTerm.Trim().ToLower();
+            result = result.Where(c =>
+                c.Name.ToLower().Contains(q) ||
+                c.CourseCode.ToLower().Contains(q));
+        }
+
+        if (statusFilter == "Active")
+            result = result.Where(c => c.IsActive);
+        else if (statusFilter == "Inactive")
+            result = result.Where(c => !c.IsActive);
+
+        filteredCourses = result.ToList();
+    }
+
+    private void OnStatusFilterChanged(ChangeEventArgs e)
+    {
+        statusFilter = e.Value?.ToString() ?? "All";
+        ApplyFilters();
+    }
+
+    private void ShowAddModal()
+    {
+        editingCourse = new Course { IsActive = true, Credits = 3, MaxCapacity = 30 };
+        selectedTeacherNames = new();
+        modalError = null;
+        isCourseModalVisible = true;
+    }
+
+    private void ShowEditModal(Course course)
+    {
+        editingCourse = new Course
+        {
+            Id = course.Id,
+            Name = course.Name,
+            CourseCode = course.CourseCode,
+            Description = course.Description,
+            Schedule = course.Schedule,
+            RoomNo = course.RoomNo,
+            Credits = course.Credits,
+            MaxCapacity = course.MaxCapacity,
+            IsActive = course.IsActive,
+            CreatedAt = course.CreatedAt
+        };
+        selectedTeacherNames = course.CourseTeachers
+            .Select(ct => TeacherLabel(ct.Teacher))
+            .ToHashSet();
+        modalError = null;
+        isCourseModalVisible = true;
+    }
+
+    private void CloseModal()
+    {
+        isCourseModalVisible = false;
+        editingCourse = new();
+        selectedTeacherNames = new();
+    }
+
+    private async Task SaveCourse()
+    {
+        modalError = null;
+        try
+        {
+            var teacherIds = selectedTeacherNames
+                .Where(n => teacherNameToId.ContainsKey(n))
+                .Select(n => teacherNameToId[n])
+                .ToList();
+
+            if (editingCourse.Id == 0)
+                await CourseService.CreateAsync(editingCourse, teacherIds);
+            else
+                await CourseService.UpdateAsync(editingCourse, teacherIds);
+
+            CloseModal();
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            modalError = ex.Message;
+        }
+    }
+
+    private async Task ToggleActive(Course course)
+    {
+        await CourseService.ToggleActiveAsync(course.Id);
+        course.IsActive = !course.IsActive;
+        ApplyFilters();
+    }
+
+    private void ConfirmDelete(Course course)
+    {
+        courseToDelete = course;
+        isDeleteModalVisible = true;
+    }
+
+    private void CloseDeleteModal()
+    {
+        isDeleteModalVisible = false;
+        courseToDelete = null;
+    }
+
+    private async Task DeleteCourse()
+    {
+        if (courseToDelete != null)
+        {
+            try
+            {
+                await CourseService.DeleteAsync(courseToDelete.Id);
+                CloseDeleteModal();
+                await LoadDataAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting course: {ex.Message}");
+                CloseDeleteModal();
+            }
+        }
+    }
+}

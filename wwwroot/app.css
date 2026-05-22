@@ -812,7 +812,18 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     width: 100%;
     max-width: 600px;
+    overflow: visible;
+}
+
+.custom-modal-content .auth-header {
+    border-radius: 16px 16px 0 0;
     overflow: hidden;
+}
+
+.custom-modal-content .auth-body {
+    max-height: calc(85vh - 80px);
+    overflow-y: auto;
+    border-radius: 0 0 16px 16px;
 }
 
 .validation-message {

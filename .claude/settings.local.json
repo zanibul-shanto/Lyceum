@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\zanib\\\\source\\\\repos\\\\Lyceum\\\\Models\" -File | Select-Object Name | ForEach-Object { $_.Name })",
+      "Bash(dotnet add *)",
+      "Bash(dotnet build *)"
+    ]
+  }
+}
