@@ -89,17 +89,6 @@
     <AuthorizeView>
         <Authorized>
             <div>
-                <!-- User profile card matching mockup -->
-                <div class="sidebar-profile-block">
-                    <div class="sidebar-avatar">
-                        @GetInitials(context.User.FindFirst("FullName")?.Value ?? context.User.Identity?.Name ?? "Alex Chen")
-                    </div>
-                    <div class="sidebar-profile-info">
-                        <div class="sidebar-profile-name text-truncate">@(context.User.FindFirst("FullName")?.Value ?? context.User.Identity?.Name ?? "Alex Chen")</div>
-                        <div class="sidebar-profile-role">@(context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "Student")</div>
-                    </div>
-                </div>
-                
                 <!-- Logout link matching mockup -->
                 <div class="sidebar-logout-block">
                     <a href="javascript:void(0)" @onclick="Logout" class="sidebar-logout-link">
