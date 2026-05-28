@@ -8,300 +8,288 @@
 
 <AuthorizeView Roles="Admin" Context="authContext">
     <Authorized>
-
-<div class="container-fluid py-4 px-xl-5">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="fw-bold mb-1" style="color: var(--dark); font-size: 2.2rem;">Course Management</h1>
-            <p class="text-secondary mb-0">Create, schedule, and manage courses across all departments.</p>
-        </div>
-        <button @onclick="ShowAddModal" class="btn btn-primary-custom shadow-sm">
-            Add Course
-        </button>
-    </div>
-
-    <!-- KPI Cards -->
-    <div class="row g-4 mb-5">
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="dashboard-card">
-                <div class="text-secondary small fw-semibold text-uppercase mb-1">Total Courses</div>
-                <h3 class="fw-bold mb-0 text-dark">@allCourses.Count</h3>
+        <div class="w-100">
+            <!-- Header Section -->
+            <div class="d-flex justify-between align-center mb-6">
+                <div>
+                    <MudText Typo="Typo.h4" Class="font-weight-bold mb-1" Style="font-family: 'Outfit', sans-serif;">Course Management</MudText>
+                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Create, schedule, and manage courses across all departments.</MudText>
+                </div>
+                <MudButton OnClick="ShowAddModal" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.LibraryAdd" Class="py-2 px-4 font-weight-bold" Style="text-transform: none; border-radius: 8px;">
+                    Add Course
+                </MudButton>
             </div>
-        </div>
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="dashboard-card">
-                <div class="text-secondary small fw-semibold text-uppercase mb-1">Active</div>
-                <h3 class="fw-bold mb-0 text-dark">@allCourses.Count(c => c.IsActive)</h3>
-            </div>
-        </div>
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="dashboard-card">
-                <div class="text-secondary small fw-semibold text-uppercase mb-1">Inactive</div>
-                <h3 class="fw-bold mb-0 text-dark">@allCourses.Count(c => !c.IsActive)</h3>
-            </div>
-        </div>
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="dashboard-card">
-                <div class="text-secondary small fw-semibold text-uppercase mb-1">Teachers Assigned</div>
-                <h3 class="fw-bold mb-0 text-dark">@allCourses.SelectMany(c => c.CourseTeachers).Select(ct => ct.TeacherId).Distinct().Count()</h3>
-            </div>
-        </div>
-    </div>
 
-    <!-- Course Grid -->
-    <div class="dashboard-card p-4 mb-4">
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
-            <h4 class="fw-bold mb-0" style="color: var(--dark);">Course Directory</h4>
-
-            <div class="d-flex flex-wrap gap-2 align-items-center">
-                <input type="text" @bind-value="searchTerm" @bind-value:event="oninput" @onkeyup="ApplyFilters"
-                       class="form-control form-control-custom py-2" placeholder="Search by name or code..."
-                       style="min-width: 250px;" />
-
-                <select class="form-select form-control-custom py-2" style="min-width: 150px;" @onchange="OnStatusFilterChanged">
-                    <option value="All">All Status</option>
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                </select>
-            </div>
-        </div>
-
-        <Grid TItem="Course"
-              Data="filteredCourses"
-              AllowPaging="true"
-              PageSize="10"
-              AllowSorting="true"
-              Responsive="true"
-              class="table custom-table">
-
-            <GridColumn TItem="Course" HeaderText="Active" Sortable="false"
-                        HeaderTextAlignment="Alignment.Center" TextAlignment="Alignment.Center">
-                <ChildContent Context="course">
-                    <div class="form-check form-switch mb-0 d-flex justify-content-center">
-                        <input class="form-check-input" type="checkbox" role="switch"
-                               checked="@course.IsActive"
-                               @onchange="() => ToggleActive(course)"
-                               title="@(course.IsActive ? "Deactivate" : "Activate")" />
-                    </div>
-                </ChildContent>
-            </GridColumn>
-
-            <GridColumn TItem="Course" HeaderText="Code" PropertyName="CourseCode" SortKeySelector="c => c.CourseCode">
-                <ChildContent Context="course">
-                    <span class="font-monospace fw-semibold text-primary">@course.CourseCode</span>
-                </ChildContent>
-            </GridColumn>
-
-            <GridColumn TItem="Course" HeaderText="Name" PropertyName="Name" SortKeySelector="c => c.Name">
-                <ChildContent Context="course">
-                    <div class="fw-bold text-dark">@course.Name</div>
-                    @if (!string.IsNullOrWhiteSpace(course.Description))
-                    {
-                        <div class="text-secondary small"
-                             style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                            @course.Description
+            <!-- KPI Row -->
+            <MudGrid Class="mb-6">
+                <MudItem XS="12" SM="6" MD="3">
+                    <MudPaper Class="pa-6 border d-flex align-center gap-4" Elevation="0" Style="background-color: white; border-radius: 12px; height: 100%;">
+                        <div class="d-flex align-center justify-center rounded-lg" style="width: 48px; height: 48px; background-color: var(--mud-palette-primary-lighten); color: var(--mud-palette-primary);">
+                            <MudIcon Icon="@Icons.Material.Filled.Book" />
                         </div>
-                    }
-                </ChildContent>
-            </GridColumn>
-
-            <GridColumn TItem="Course" HeaderText="Schedule / Room" Sortable="false">
-                <ChildContent Context="course">
-                    <div class="small">
-                        @if (!string.IsNullOrWhiteSpace(course.Schedule))
-                        {
-                            <div>@course.Schedule</div>
-                        }
-                        @if (!string.IsNullOrWhiteSpace(course.RoomNo))
-                        {
-                            <div class="text-secondary">@course.RoomNo</div>
-                        }
-                        @if (string.IsNullOrWhiteSpace(course.Schedule) && string.IsNullOrWhiteSpace(course.RoomNo))
-                        {
-                            <span class="text-secondary">—</span>
-                        }
-                    </div>
-                </ChildContent>
-            </GridColumn>
-
-            <GridColumn TItem="Course" HeaderText="Credits" SortKeySelector="c => c.Credits"
-                        HeaderTextAlignment="Alignment.Center" TextAlignment="Alignment.Center">
-                <ChildContent Context="course">
-                    <span class="badge bg-success-subtle text-success fw-normal">@course.Credits cr</span>
-                </ChildContent>
-            </GridColumn>
-
-            <GridColumn TItem="Course" HeaderText="Capacity" SortKeySelector="c => c.MaxCapacity"
-                        HeaderTextAlignment="Alignment.Center" TextAlignment="Alignment.Center">
-                <ChildContent Context="course">
-                    <span class="text-secondary small">@course.MaxCapacity</span>
-                </ChildContent>
-            </GridColumn>
-
-            <GridColumn TItem="Course" HeaderText="Teachers" Sortable="false">
-                <ChildContent Context="course">
-                    @if (!course.CourseTeachers.Any())
-                    {
-                        <span class="text-secondary small">—</span>
-                    }
-                    else
-                    {
-                        <div class="d-flex flex-wrap gap-1">
-                            @foreach (var ct in course.CourseTeachers.Take(2))
-                            {
-                                <span class="badge-role badge-teacher" style="font-size:0.72rem;">@ct.Teacher.FullName</span>
-                            }
-                            @if (course.CourseTeachers.Count > 2)
-                            {
-                                <span class="badge bg-secondary-subtle text-secondary" style="font-size:0.72rem;">
-                                    +@(course.CourseTeachers.Count - 2)
-                                </span>
-                            }
+                        <div>
+                            <MudText Typo="Typo.overline" Color="Color.Secondary" Style="font-weight: 700;">Total Courses</MudText>
+                            <MudText Typo="Typo.h4" Class="font-weight-bold" Style="font-family: 'Outfit', sans-serif;">@allCourses.Count</MudText>
                         </div>
-                    }
-                </ChildContent>
-            </GridColumn>
-
-            <GridColumn TItem="Course" HeaderText="Created" SortKeySelector="c => c.CreatedAt">
-                <ChildContent Context="course">
-                    <span class="text-secondary small">@course.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</span>
-                </ChildContent>
-            </GridColumn>
-
-            <GridColumn TItem="Course" HeaderText="" Sortable="false" TextAlignment="Alignment.End">
-                <ChildContent Context="course">
-                    <button @onclick="() => ShowEditModal(course)" class="btn btn-sm btn-outline-primary border-0 me-1">Edit</button>
-                    <button @onclick="() => ConfirmDelete(course)" class="btn btn-sm btn-outline-danger border-0">Delete</button>
-                </ChildContent>
-            </GridColumn>
-        </Grid>
-    </div>
-</div>
-
-<!-- Modal: Add / Edit Course -->
-@if (isCourseModalVisible)
-{
-    <div class="custom-modal-backdrop">
-        <div class="custom-modal-content" style="max-width: 680px;">
-            <div class="auth-header py-3 px-4 d-flex justify-content-between align-items-center">
-                <h4 class="fw-bold mb-0">@(editingCourse.Id == 0 ? "Add New Course" : "Edit Course")</h4>
-                <button type="button" class="btn-close btn-close-white" @onclick="CloseModal"></button>
-            </div>
-            <div class="auth-body p-4">
-                @if (!string.IsNullOrEmpty(modalError))
-                {
-                    <div class="alert alert-danger border-0 mb-3" style="border-radius: 8px;">@modalError</div>
-                }
-
-                <EditForm Model="editingCourse" OnValidSubmit="SaveCourse" FormName="CourseForm">
-                    <DataAnnotationsValidator />
-
-                    <div class="row g-3">
-                        <div class="col-12 col-md-8">
-                            <label class="form-label fw-semibold small text-secondary">Course Name</label>
-                            <InputText @bind-Value="editingCourse.Name" class="form-control form-control-custom" placeholder="e.g. Introduction to Computer Science" />
-                            <ValidationMessage For="() => editingCourse.Name" />
+                    </MudPaper>
+                </MudItem>
+                <MudItem XS="12" SM="6" MD="3">
+                    <MudPaper Class="pa-6 border d-flex align-center gap-4" Elevation="0" Style="background-color: white; border-radius: 12px; height: 100%;">
+                        <div class="d-flex align-center justify-center rounded-lg" style="width: 48px; height: 48px; background-color: var(--mud-palette-success-lighten); color: var(--mud-palette-success);">
+                            <MudIcon Icon="@Icons.Material.Filled.ToggleOn" />
                         </div>
-                        <div class="col-12 col-md-4">
-                            <label class="form-label fw-semibold small text-secondary">Course Code</label>
-                            <InputText @bind-Value="editingCourse.CourseCode" class="form-control form-control-custom" placeholder="e.g. CS101" />
-                            <ValidationMessage For="() => editingCourse.CourseCode" />
+                        <div>
+                            <MudText Typo="Typo.overline" Color="Color.Secondary" Style="font-weight: 700;">Active</MudText>
+                            <MudText Typo="Typo.h4" Class="font-weight-bold" Style="font-family: 'Outfit', sans-serif;">@allCourses.Count(c => c.IsActive)</MudText>
                         </div>
+                    </MudPaper>
+                </MudItem>
+                <MudItem XS="12" SM="6" MD="3">
+                    <MudPaper Class="pa-6 border d-flex align-center gap-4" Elevation="0" Style="background-color: white; border-radius: 12px; height: 100%;">
+                        <div class="d-flex align-center justify-center rounded-lg" style="width: 48px; height: 48px; background-color: var(--mud-palette-background-grey); color: var(--mud-palette-text-secondary);">
+                            <MudIcon Icon="@Icons.Material.Filled.ToggleOff" />
+                        </div>
+                        <div>
+                            <MudText Typo="Typo.overline" Color="Color.Secondary" Style="font-weight: 700;">Inactive</MudText>
+                            <MudText Typo="Typo.h4" Class="font-weight-bold" Style="font-family: 'Outfit', sans-serif;">@allCourses.Count(c => !c.IsActive)</MudText>
+                        </div>
+                    </MudPaper>
+                </MudItem>
+                <MudItem XS="12" SM="6" MD="3">
+                    <MudPaper Class="pa-6 border d-flex align-center gap-4" Elevation="0" Style="background-color: white; border-radius: 12px; height: 100%;">
+                        <div class="d-flex align-center justify-center rounded-lg" style="width: 48px; height: 48px; background-color: var(--mud-palette-warning-lighten); color: var(--mud-palette-warning);">
+                            <MudIcon Icon="@Icons.Material.Filled.SupervisorAccount" />
+                        </div>
+                        <div>
+                            <MudText Typo="Typo.overline" Color="Color.Secondary" Style="font-weight: 700;">Teachers Assigned</MudText>
+                            <MudText Typo="Typo.h4" Class="font-weight-bold" Style="font-family: 'Outfit', sans-serif;">@allCourses.SelectMany(c => c.CourseTeachers).Select(ct => ct.TeacherId).Distinct().Count()</MudText>
+                        </div>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
 
-                        <div class="col-12">
-                            <label class="form-label fw-semibold small text-secondary">Description</label>
-                            <InputTextArea @bind-Value="editingCourse.Description" class="form-control form-control-custom" rows="2" placeholder="Brief course description..." />
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold small text-secondary">Schedule</label>
-                            <InputText @bind-Value="editingCourse.Schedule" class="form-control form-control-custom" placeholder="e.g. Mon/Wed 9:00–10:30 AM" />
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold small text-secondary">Room No.</label>
-                            <InputText @bind-Value="editingCourse.RoomNo" class="form-control form-control-custom" placeholder="e.g. Science Hall, Rm 302" />
-                        </div>
-
-                        <div class="col-6 col-md-3">
-                            <label class="form-label fw-semibold small text-secondary">Credits</label>
-                            <InputNumber @bind-Value="editingCourse.Credits" class="form-control form-control-custom" min="1" max="10" />
-                            <ValidationMessage For="() => editingCourse.Credits" />
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <label class="form-label fw-semibold small text-secondary">Max Capacity</label>
-                            <InputNumber @bind-Value="editingCourse.MaxCapacity" class="form-control form-control-custom" min="1" max="500" />
-                            <ValidationMessage For="() => editingCourse.MaxCapacity" />
-                        </div>
-                        <div class="col-12 col-md-6 d-flex align-items-end pb-1">
-                            <div class="form-check form-switch">
-                                <InputCheckbox @bind-Value="editingCourse.IsActive" class="form-check-input" id="isActiveCb" />
-                                <label class="form-check-label fw-semibold small text-secondary" for="isActiveCb">Course is Active</label>
+            <!-- Course Directory Table -->
+            <MudCard Class="border mb-4" Elevation="0" Style="background-color: white; border-radius: 12px;">
+                <MudCardHeader Class="pb-2">
+                    <CardHeaderContent>
+                        <div class="d-flex flex-column flex-md-row justify-between align-start align-md-center gap-4">
+                            <MudText Typo="Typo.h5" Class="font-weight-bold" Style="font-family: 'Outfit', sans-serif;">Course Directory</MudText>
+                            
+                            <div class="d-flex flex-wrap gap-3 align-center" style="min-width: 320px;">
+                                <!-- Search Input -->
+                                <MudTextField @bind-Value="searchTerm" Placeholder="Search by name or code..." 
+                                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" 
+                                              Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-white rounded-lg" Immediate="true" />
+                                
+                                <!-- Status Filter Select -->
+                                <MudSelect T="string" @bind-Value="statusFilter" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 150px;">
+                                    <MudSelectItem Value="@("All")">All Status</MudSelectItem>
+                                    <MudSelectItem Value="@("Active")">Active</MudSelectItem>
+                                    <MudSelectItem Value="@("Inactive")">Inactive</MudSelectItem>
+                                </MudSelect>
                             </div>
                         </div>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudTable Items="filteredCourses" Elevation="0" Class="border-0" Hover="true" RowsPerPage="10">
+                        <HeaderContent>
+                            <MudTh>Active</MudTh>
+                            <MudTh>Code</MudTh>
+                            <MudTh>Name</MudTh>
+                            <MudTh>Schedule / Room</MudTh>
+                            <MudTh>Credits</MudTh>
+                            <MudTh>Capacity</MudTh>
+                            <MudTh>Teachers</MudTh>
+                            <MudTh>Created</MudTh>
+                            <MudTh Style="text-align: right;">Actions</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Active">
+                                <MudSwitch T="bool" Value="@context.IsActive" ValueChanged="() => ToggleActive(context)" Color="Color.Primary" />
+                            </MudTd>
+                            <MudTd DataLabel="Code">
+                                <span class="font-monospace fw-semibold text-primary">@context.CourseCode</span>
+                            </MudTd>
+                            <MudTd DataLabel="Name">
+                                <MudText Typo="Typo.body2" Class="font-weight-bold">@context.Name</MudText>
+                                @if (!string.IsNullOrWhiteSpace(context.Description))
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block" Style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                        @context.Description
+                                    </MudText>
+                                }
+                            </MudTd>
+                            <MudTd DataLabel="Schedule / Room">
+                                <MudText Typo="Typo.body2">@(string.IsNullOrWhiteSpace(context.Schedule) ? "—" : context.Schedule)</MudText>
+                                @if (!string.IsNullOrWhiteSpace(context.RoomNo))
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@context.RoomNo</MudText>
+                                }
+                            </MudTd>
+                            <MudTd DataLabel="Credits">
+                                <MudChip T="string" Color="Color.Success" Variant="Variant.Text" Size="Size.Small" Style="font-weight: bold; border-radius: 4px;">
+                                    @context.Credits cr
+                                </MudChip>
+                            </MudTd>
+                            <MudTd DataLabel="Capacity">
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">@context.MaxCapacity</MudText>
+                            </MudTd>
+                            <MudTd DataLabel="Teachers">
+                                @if (!context.CourseTeachers.Any())
+                                {
+                                    <span style="color: var(--mud-palette-text-disabled);">—</span>
+                                }
+                                else
+                                {
+                                    <div class="d-flex flex-wrap gap-1" style="max-width: 200px;">
+                                        @foreach (var ct in context.CourseTeachers.Take(2))
+                                        {
+                                            <MudChip T="string" Color="Color.Warning" Size="Size.Small" Style="font-size: 0.72rem; height: 20px; font-weight: bold; border-radius: 4px;" Class="ma-0">
+                                                @ct.Teacher.FullName
+                                            </MudChip>
+                                        }
+                                        @if (context.CourseTeachers.Count > 2)
+                                        {
+                                            <MudChip T="string" Color="Color.Default" Size="Size.Small" Style="font-size: 0.72rem; height: 20px; font-weight: bold; border-radius: 4px;" Class="ma-0">
+                                                +@(context.CourseTeachers.Count - 2)
+                                            </MudChip>
+                                        }
+                                    </div>
+                                }
+                            </MudTd>
+                            <MudTd DataLabel="Created">
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">@context.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</MudText>
+                            </MudTd>
+                            <MudTd DataLabel="Actions" Style="text-align: right;">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" OnClick="() => ShowEditModal(context)" Size="Size.Small" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => ConfirmDelete(context)" Size="Size.Small" />
+                            </MudTd>
+                        </RowTemplate>
+                        <PagerContent>
+                            <MudTablePager />
+                        </PagerContent>
+                        <NoRecordsContent>
+                            <div class="text-center py-6 text-secondary">
+                                <MudIcon Icon="@Icons.Material.Filled.LibraryBooks" Style="font-size: 2.5rem;" Color="Color.Default" Class="mb-2" />
+                                <MudText Typo="Typo.body2" Style="font-weight: bold;">No courses found matching current filters.</MudText>
+                            </div>
+                        </NoRecordsContent>
+                    </MudTable>
+                </MudCardContent>
+            </MudCard>
 
-                        <!-- Teacher Assignment -->
-                        <div class="col-12">
-                            <label class="form-label fw-semibold small text-secondary">Assign Teachers</label>
-                            @if (!allTeachers.Any())
-                            {
-                                <p class="text-secondary small mb-0">No teachers found. Add teacher accounts first.</p>
-                            }
-                            else
-                            {
-                                <SimpleMultiselect Options="teacherOptions"
-                                                   @bind-SelectedOptions="selectedTeacherNames"
-                                                   CanFilter="true" />
-                            }
+            <!-- Modal: Add / Edit Course -->
+            <MudDialog @bind-Visible="isCourseModalVisible" Options="_courseDialogOptions">
+                <TitleContent>
+                    <MudText Typo="Typo.h6" Class="font-weight-bold" Style="font-family: 'Outfit', sans-serif;">
+                        @(editingCourse.Id == 0 ? "Add New Course" : "Edit Course")
+                    </MudText>
+                </TitleContent>
+                <DialogContent>
+                    @if (!string.IsNullOrEmpty(modalError))
+                    {
+                        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4 rounded-lg" Elevation="0">
+                            @modalError
+                        </MudAlert>
+                    }
+
+                    <EditForm Model="editingCourse" OnValidSubmit="SaveCourse" FormName="CourseForm">
+                        <DataAnnotationsValidator />
+
+                        <MudGrid Class="g-3">
+                            <MudItem XS="12" SM="8">
+                                <MudTextField Label="Course Name" @bind-Value="editingCourse.Name" 
+                                              For="() => editingCourse.Name" Variant="Variant.Outlined" 
+                                              Placeholder="e.g. Introduction to Computer Science" Margin="Margin.Dense" Required="true" />
+                            </MudItem>
+                            <MudItem XS="12" SM="4">
+                                <MudTextField Label="Course Code" @bind-Value="editingCourse.CourseCode" 
+                                              For="() => editingCourse.CourseCode" Variant="Variant.Outlined" 
+                                              Placeholder="e.g. CS101" Margin="Margin.Dense" Required="true" />
+                            </MudItem>
+
+                            <MudItem XS="12">
+                                <MudTextField Label="Description" @bind-Value="editingCourse.Description" Lines="2"
+                                              Variant="Variant.Outlined" Placeholder="Brief course description..." Margin="Margin.Dense" />
+                            </MudItem>
+
+                            <MudItem XS="12" SM="6">
+                                <MudTextField Label="Schedule" @bind-Value="editingCourse.Schedule" 
+                                              Variant="Variant.Outlined" Placeholder="e.g. Mon/Wed 9:00–10:30 AM" Margin="Margin.Dense" />
+                            </MudItem>
+                            <MudItem XS="12" SM="6">
+                                <MudTextField Label="Room No." @bind-Value="editingCourse.RoomNo" 
+                                              Variant="Variant.Outlined" Placeholder="e.g. Science Hall, Rm 302" Margin="Margin.Dense" />
+                            </MudItem>
+
+                            <MudItem XS="6" SM="3">
+                                <MudNumericField T="int" Label="Credits" @bind-Value="editingCourse.Credits" 
+                                                 For="() => editingCourse.Credits" Min="1" Max="10" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" />
+                            </MudItem>
+                            <MudItem XS="6" SM="3">
+                                <MudNumericField T="int" Label="Max Capacity" @bind-Value="editingCourse.MaxCapacity" 
+                                                 For="() => editingCourse.MaxCapacity" Min="1" Max="500" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" />
+                            </MudItem>
+                            <MudItem XS="12" SM="6" Class="d-flex align-center pb-2">
+                                <MudSwitch T="bool" @bind-Value="editingCourse.IsActive" Label="Course is Active" Color="Color.Primary" />
+                            </MudItem>
+
+                            <!-- Teacher Assignment -->
+                            <MudItem XS="12">
+                                @if (!allTeachers.Any())
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">No teachers found. Add teacher accounts first.</MudText>
+                                }
+                                else
+                                {
+                                    <MudSelect T="string" Label="Assign Teachers" MultiSelection="true" @bind-SelectedValues="selectedTeacherNamesEnumerable" Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-white">
+                                        @foreach (var tOption in teacherOptions)
+                                        {
+                                            <MudSelectItem Value="@tOption">@tOption</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                }
+                            </MudItem>
+                        </MudGrid>
+
+                        <div class="d-flex justify-end gap-3 mt-6">
+                            <MudButton OnClick="CloseModal" Variant="Variant.Text" Color="Color.Secondary" Style="text-transform: none; font-weight: bold;">Cancel</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" Style="text-transform: none; font-weight: bold; border-radius: 8px;">Save Course</MudButton>
                         </div>
+                    </EditForm>
+                </DialogContent>
+            </MudDialog>
+
+            <!-- Modal: Delete Confirmation -->
+            <MudDialog @bind-Visible="isDeleteModalVisible" Options="_deleteDialogOptions">
+                <TitleContent>
+                    <MudText Typo="Typo.h6" Class="font-weight-bold" Style="font-family: 'Outfit', sans-serif;">Confirm Deletion</MudText>
+                </TitleContent>
+                <DialogContent>
+                    <div class="text-center py-4">
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Style="font-size: 3rem;" Class="mb-3" />
+                        <MudText Typo="Typo.h6" Class="font-weight-bold mb-2">Delete Course?</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="px-4">
+                            Are you sure you want to delete <strong>@courseToDelete?.Name</strong> (<span class="font-monospace">@courseToDelete?.CourseCode</span>)?
+                            This action cannot be undone.
+                        </MudText>
                     </div>
-
-                    <div class="d-flex justify-content-end gap-2 mt-4">
-                        <button type="button" class="btn btn-secondary-custom" @onclick="CloseModal">Cancel</button>
-                        <button type="submit" class="btn btn-primary-custom">Save Course</button>
+                </DialogContent>
+                <DialogActions>
+                    <div class="d-flex justify-center gap-3 w-100 pb-4">
+                        <MudButton OnClick="CloseDeleteModal" Variant="Variant.Text" Color="Color.Secondary" Style="text-transform: none; font-weight: bold; width: 120px;">Cancel</MudButton>
+                        <MudButton OnClick="DeleteCourse" Variant="Variant.Filled" Color="Color.Error" Style="text-transform: none; font-weight: bold; border-radius: 8px; width: 160px;">Delete Permanently</MudButton>
                     </div>
-                </EditForm>
-            </div>
+                </DialogActions>
+            </MudDialog>
         </div>
-    </div>
-}
-
-<!-- Modal: Delete Confirmation -->
-@if (isDeleteModalVisible)
-{
-    <div class="custom-modal-backdrop">
-        <div class="custom-modal-content" style="max-width: 450px;">
-            <div class="auth-header bg-danger py-3 px-4 d-flex justify-content-between align-items-center"
-                 style="background: linear-gradient(135deg, var(--danger) 0%, var(--danger-hover) 100%);">
-                <h4 class="fw-bold mb-0">Confirm Deletion</h4>
-                <button type="button" class="btn-close btn-close-white" @onclick="CloseDeleteModal"></button>
-            </div>
-            <div class="auth-body p-4 text-center">
-                <h5 class="fw-bold mb-2">Delete Course?</h5>
-                <p class="text-secondary small mb-4">
-                    Are you sure you want to delete <strong>@courseToDelete?.Name</strong>
-                    (<span class="font-monospace">@courseToDelete?.CourseCode</span>)?
-                    This action cannot be undone.
-                </p>
-                <div class="d-flex justify-content-center gap-2">
-                    <button type="button" class="btn btn-secondary-custom px-4" @onclick="CloseDeleteModal">Cancel</button>
-                    <button type="button" class="btn btn-danger py-2 px-4 fw-semibold shadow-sm border-0"
-                            style="border-radius: 8px; background-color: var(--danger);" @onclick="DeleteCourse">
-                        Delete Permanently
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
     </Authorized>
     <NotAuthorized>
-        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 80vh;">
-            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <p class="mt-3 text-secondary fw-semibold">Loading Admin Portal...</p>
+        <!-- Premium Loader during pre-render session loading -->
+        <div class="d-flex flex-column align-center justify-center" style="min-height: 80vh;">
+            <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+            <MudText Class="mt-4 text-secondary font-weight-bold">Loading Admin Portal...</MudText>
         </div>
     </NotAuthorized>
 </AuthorizeView>
@@ -311,8 +299,34 @@
     private List<Course> filteredCourses = [];
     private List<User> allTeachers = [];
 
-    private string searchTerm = string.Empty;
-    private string statusFilter = "All";
+    // Custom getter/setter binds to easily react to search and filter inputs
+    private string _searchTerm = string.Empty;
+    private string searchTerm
+    {
+        get => _searchTerm;
+        set
+        {
+            if (_searchTerm != value)
+            {
+                _searchTerm = value;
+                ApplyFilters();
+            }
+        }
+    }
+
+    private string _statusFilter = "All";
+    private string statusFilter
+    {
+        get => _statusFilter;
+        set
+        {
+            if (_statusFilter != value)
+            {
+                _statusFilter = value;
+                ApplyFilters();
+            }
+        }
+    }
 
     // Modal state
     private bool isCourseModalVisible;
@@ -321,6 +335,16 @@
     private Course? courseToDelete;
     private string? modalError;
     private HashSet<string> selectedTeacherNames = new();
+
+    // Map selected values for MudSelect multi-selection enumerable
+    private IEnumerable<string> selectedTeacherNamesEnumerable
+    {
+        get => selectedTeacherNames;
+        set => selectedTeacherNames = value.ToHashSet();
+    }
+
+    private readonly DialogOptions _courseDialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true };
+    private readonly DialogOptions _deleteDialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
 
     private List<string> teacherOptions =>
         allTeachers.Select(TeacherLabel).ToList();
@@ -377,12 +401,7 @@
             result = result.Where(c => !c.IsActive);
 
         filteredCourses = result.ToList();
-    }
-
-    private void OnStatusFilterChanged(ChangeEventArgs e)
-    {
-        statusFilter = e.Value?.ToString() ?? "All";
-        ApplyFilters();
+        StateHasChanged();
     }
 
     private void ShowAddModal()

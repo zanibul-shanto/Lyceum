@@ -4,32 +4,31 @@
 
 <PageTitle>Register - Lyceum</PageTitle>
 
-<div class="auth-card-modern">
-    <div class="logo-container">
-        <div class="logo-box-modern">L</div>
-        <span class="logo-text-modern">Lyceum</span>
+<MudCard Class="pa-8 rounded-xl border" Elevation="0" Style="max-width: 480px; width: 100%; background-color: white;">
+    <div class="d-flex align-center gap-3 mb-6">
+        <div class="d-flex align-center justify-center rounded-lg" style="width: 32px; height: 32px; background-color: var(--mud-palette-primary); color: white; font-weight: 800; font-size: 1.15rem; font-family: 'Outfit', sans-serif;">L</div>
+        <MudText Typo="Typo.h6" Class="font-weight-bold text-dark" Style="font-family: 'Outfit', sans-serif;">Lyceum</MudText>
     </div>
 
-    <h1 class="auth-title-modern">Create your account</h1>
-    <p class="auth-subtitle-modern">Join the Lyceum Management System</p>
+    <MudText Typo="Typo.h5" Class="font-weight-bold mb-1" Style="font-family: 'Outfit', sans-serif;">Create your account</MudText>
+    <MudText Typo="Typo.body2" Class="mb-6 text-secondary">Join the Lyceum Management System</MudText>
 
     @if (!string.IsNullOrEmpty(errorMessage))
     {
-        <div class="auth-alert-modern mb-4" role="alert">
-            <i class="bi bi-exclamation-triangle-fill auth-alert-icon"></i>
-            <div>@errorMessage</div>
-        </div>
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-6 rounded-lg" Elevation="0">
+            @errorMessage
+        </MudAlert>
     }
 
     @if (isSuccess)
     {
-        <div class="auth-success-modern mb-4" role="alert">
-            <i class="bi bi-check-circle-fill auth-success-icon"></i>
-            <h5 class="fw-bold mb-2">Registration Successful!</h5>
-            <p class="small mb-3 text-secondary">Your account has been created. You can now sign in using your credentials.</p>
-            <a href="/login" class="btn-success-modern">
+        <div class="d-flex flex-column align-center text-center">
+            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Style="font-size: 3rem;" Class="mb-3" />
+            <MudText Typo="Typo.h6" Class="font-weight-bold mb-2">Registration Successful!</MudText>
+            <MudText Typo="Typo.body2" Class="text-secondary mb-6">Your account has been created. You can now sign in using your credentials.</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Success" Href="/login" FullWidth="true" Class="py-3 rounded-lg font-weight-bold" Style="text-transform: none;">
                 Go to Login
-            </a>
+            </MudButton>
         </div>
     }
     else
@@ -37,64 +36,67 @@
         <EditForm Model="registerModel" OnValidSubmit="HandleRegister" FormName="RegisterForm">
             <DataAnnotationsValidator />
 
-            <div class="mb-3">
-                <label class="label-modern">Username</label>
-                <InputText @bind-Value="registerModel.Username" class="input-modern" placeholder="Choose a username" />
-                <ValidationMessage For="() => registerModel.Username" />
-            </div>
-
-            <div class="mb-3">
-                <label class="label-modern">Full Name</label>
-                <InputText @bind-Value="registerModel.FullName" class="input-modern" placeholder="Enter your full name" />
-                <ValidationMessage For="() => registerModel.FullName" />
-            </div>
-
-            <div class="mb-3">
-                <label class="label-modern">Email Address</label>
-                <InputText @bind-Value="registerModel.Email" class="input-modern" placeholder="you@university.edu" />
-                <ValidationMessage For="() => registerModel.Email" />
-            </div>
-
-            <div class="mb-3">
-                <label class="label-modern">Role</label>
-                <InputSelect @bind-Value="registerModel.Role" class="input-modern">
-                    <option value="Student">Student</option>
-                    <option value="Teacher">Teacher</option>
-                    <option value="Admin">Administrator</option>
-                </InputSelect>
-            </div>
-
-            <div class="mb-3">
-                <label class="label-modern">Password</label>
-                <InputText type="password" @bind-Value="registerModel.Password" class="input-modern" placeholder="Choose a password" />
-                <ValidationMessage For="() => registerModel.Password" />
+            <div class="mb-4">
+                <MudTextField Label="Username" @bind-Value="registerModel.Username" 
+                              For="() => registerModel.Username" Variant="Variant.Outlined" 
+                              Placeholder="Choose a username" Required="true" Margin="Margin.Dense" />
             </div>
 
             <div class="mb-4">
-                <label class="label-modern">Confirm Password</label>
-                <InputText type="password" @bind-Value="registerModel.ConfirmPassword" class="input-modern" placeholder="Re-enter password" />
-                <ValidationMessage For="() => registerModel.ConfirmPassword" />
+                <MudTextField Label="Full Name" @bind-Value="registerModel.FullName" 
+                              For="() => registerModel.FullName" Variant="Variant.Outlined" 
+                              Placeholder="Enter your full name" Required="true" Margin="Margin.Dense" />
             </div>
 
-            <button type="submit" class="btn-signin-modern" disabled="@isLoading">
+            <div class="mb-4">
+                <MudTextField Label="Email Address" @bind-Value="registerModel.Email" 
+                              For="() => registerModel.Email" Variant="Variant.Outlined" 
+                              Placeholder="you@university.edu" Required="true" Margin="Margin.Dense" />
+            </div>
+
+            <div class="mb-4">
+                <MudSelect T="string" Label="Role" @bind-Value="registerModel.Role" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true">
+                    <MudSelectItem Value="@("Student")">Student</MudSelectItem>
+                    <MudSelectItem Value="@("Teacher")">Teacher</MudSelectItem>
+                    <MudSelectItem Value="@("Admin")">Administrator</MudSelectItem>
+                </MudSelect>
+            </div>
+
+            <div class="mb-4">
+                <MudTextField Label="Password" @bind-Value="registerModel.Password" 
+                              For="() => registerModel.Password" Variant="Variant.Outlined" 
+                              Placeholder="Choose a password" Required="true" 
+                              InputType="InputType.Password" Margin="Margin.Dense" />
+            </div>
+
+            <div class="mb-6">
+                <MudTextField Label="Confirm Password" @bind-Value="registerModel.ConfirmPassword" 
+                              For="() => registerModel.ConfirmPassword" Variant="Variant.Outlined" 
+                              Placeholder="Re-enter password" Required="true" 
+                              InputType="InputType.Password" Margin="Margin.Dense" />
+            </div>
+
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" 
+                       FullWidth="true" Class="py-3 rounded-lg font-weight-bold" Style="text-transform: none; font-size: 0.95rem;" 
+                       Disabled="@isLoading">
                 @if (isLoading)
                 {
-                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <MudProgressCircular Size="Size.Small" Color="Color.Default" Indeterminate="true" Class="mr-2" />
                     <span>Registering...</span>
                 }
                 else
                 {
                     <span>Create Account</span>
                 }
-            </button>
+            </MudButton>
         </EditForm>
 
-        <div class="auth-footer-text">
-            <span>Already have an account? </span>
-            <a href="/login" class="link-signup-modern">Sign in</a>
+        <div class="d-flex align-center justify-center mt-6">
+            <MudText Typo="Typo.body2" Class="text-secondary mr-1">Already have an account?</MudText>
+            <MudLink Href="/login" Underline="Underline.Hover" Typo="Typo.body2" Color="Color.Primary" Style="font-weight: 700;">Sign in</MudLink>
         </div>
     }
-</div>
+</MudCard>
 
 @code {
     private RegisterViewModel registerModel = new();

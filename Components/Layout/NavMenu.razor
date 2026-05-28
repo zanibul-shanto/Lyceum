@@ -1,119 +1,93 @@
 @inject CustomAuthStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 
-<!-- Brand Header -->
-<div class="sidebar-brand">
-    <div class="logo-box-sidebar">L</div>
-    <div class="logo-text-sidebar">Lyceum</div>
-</div>
-
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<!-- Sidebar Scrollable Navigation -->
-<div class="nav-scrollable sidebar-menu-scrollable d-flex flex-column justify-content-between">
-    <nav class="nav flex-column">
-        <AuthorizeView>
-            <Authorized>
-                <!-- STUDENT PORTAL MENUS -->
-                <AuthorizeView Roles="Student" Context="studentCtx">
-                    <div class="sidebar-section-label">Student Portal</div>
-                    
-                    <NavLink class="sidebar-nav-link" href="student/dashboard" Match="NavLinkMatch.All">
-                        <span><i class="bi bi-grid me-2"></i> Dashboard</span>
-                    </NavLink>
-                    
-                    <NavLink class="sidebar-nav-link" href="student/courses">
-                        <span><i class="bi bi-book me-2"></i> My Courses</span>
-                    </NavLink>
-                    
-                    <NavLink class="sidebar-nav-link" href="student/assignments">
-                        <span><i class="bi bi-file-earmark-text me-2"></i> Assignments</span>
-                    </NavLink>
-                    
-                    <NavLink class="sidebar-nav-link" href="student/grades">
-                        <span><i class="bi bi-bar-chart-line me-2"></i> Grades</span>
-                    </NavLink>
-                    
-                    <NavLink class="sidebar-nav-link" href="student/schedule">
-                        <span><i class="bi bi-calendar3 me-2"></i> Schedule</span>
-                    </NavLink>
-                    
-                    <NavLink class="sidebar-nav-link" href="student/messages">
-                        <span><i class="bi bi-chat-left-text me-2"></i> Messages</span>
-                        <span class="sidebar-badge-pill">2</span>
-                    </NavLink>
-                </AuthorizeView>
-
-                <!-- TEACHER PORTAL MENUS -->
-                <AuthorizeView Roles="Teacher" Context="teacherCtx">
-                    <div class="sidebar-section-label">Teacher Portal</div>
-                    
-                    <NavLink class="sidebar-nav-link" href="teacher/dashboard" Match="NavLinkMatch.All">
-                        <span><i class="bi bi-grid me-2"></i> Dashboard</span>
-                    </NavLink>
-                    
-                    <NavLink class="sidebar-nav-link" href="teacher/classes">
-                        <span><i class="bi bi-people me-2"></i> Student Roster</span>
-                    </NavLink>
-                    
-                    <NavLink class="sidebar-nav-link" href="teacher/evaluations">
-                        <span><i class="bi bi-journal-check me-2"></i> Evaluations</span>
-                    </NavLink>
-                    
-                    <NavLink class="sidebar-nav-link" href="teacher/schedule">
-                        <span><i class="bi bi-calendar3 me-2"></i> Schedule</span>
-                    </NavLink>
-                </AuthorizeView>
-
-                <!-- ADMIN PORTAL MENUS -->
-                <AuthorizeView Roles="Admin" Context="adminCtx">
-                    <div class="sidebar-section-label">Admin Portal</div>
-                    
-                    <NavLink class="sidebar-nav-link" href="admin/dashboard" Match="NavLinkMatch.All">
-                        <span><i class="bi bi-shield-lock me-2"></i> Dashboard</span>
-                    </NavLink>
-                    
-                    <NavLink class="sidebar-nav-link" href="admin/users">
-                        <span><i class="bi bi-people me-2"></i> Manage Directory</span>
-                    </NavLink>
-
-                    <NavLink class="sidebar-nav-link" href="admin/courses">
-                        <span><i class="bi bi-book-half me-2"></i> Course Management</span>
-                    </NavLink>
-
-                    <NavLink class="sidebar-nav-link" href="admin/settings">
-                        <span><i class="bi bi-gear me-2"></i> System Settings</span>
-                    </NavLink>
-                </AuthorizeView>
-            </Authorized>
-        </AuthorizeView>
-    </nav>
-
-    <!-- Bottom Profile & Logout block -->
+<MudNavMenu>
     <AuthorizeView>
         <Authorized>
-            <div>
-                <!-- Logout link matching mockup -->
-                <div class="sidebar-logout-block">
-                    <a href="javascript:void(0)" @onclick="Logout" class="sidebar-logout-link">
-                        <i class="bi bi-box-arrow-left"></i>
-                        <span>Log out</span>
-                    </a>
-                </div>
-            </div>
+            <!-- STUDENT PORTAL MENUS -->
+            <AuthorizeView Roles="Student" Context="studentCtx">
+                <MudText Typo="Typo.overline" Class="px-4 py-2 mt-2 d-block" Color="Color.Secondary" Style="font-weight: 700; letter-spacing: 0.08em;">Student Portal</MudText>
+                
+                <MudNavLink Href="student/dashboard" Icon="@Icons.Material.Filled.Dashboard" Match="NavLinkMatch.All">
+                    Dashboard
+                </MudNavLink>
+                
+                <MudNavLink Href="student/courses" Icon="@Icons.Material.Filled.Book">
+                    My Courses
+                </MudNavLink>
+                
+                <MudNavLink Href="student/assignments" Icon="@Icons.Material.Filled.Assignment">
+                    Assignments
+                </MudNavLink>
+                
+                <MudNavLink Href="student/grades" Icon="@Icons.Material.Filled.Assessment">
+                    Grades
+                </MudNavLink>
+                
+                <MudNavLink Href="student/schedule" Icon="@Icons.Material.Filled.CalendarMonth">
+                    Schedule
+                </MudNavLink>
+                
+                <MudNavLink Href="student/messages" Icon="@Icons.Material.Filled.Forum">
+                    <div class="d-flex align-center w-100">
+                        <span>Messages</span>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Class="ml-auto mr-0 px-2 py-0" Style="font-size: 0.72rem; height: 18px; font-weight: bold;">2</MudChip>
+                    </div>
+                </MudNavLink>
+            </AuthorizeView>
+
+            <!-- TEACHER PORTAL MENUS -->
+            <AuthorizeView Roles="Teacher" Context="teacherCtx">
+                <MudText Typo="Typo.overline" Class="px-4 py-2 mt-2 d-block" Color="Color.Secondary" Style="font-weight: 700; letter-spacing: 0.08em;">Teacher Portal</MudText>
+                
+                <MudNavLink Href="teacher/dashboard" Icon="@Icons.Material.Filled.Dashboard" Match="NavLinkMatch.All">
+                    Dashboard
+                </MudNavLink>
+                
+                <MudNavLink Href="teacher/classes" Icon="@Icons.Material.Filled.People">
+                    Student Roster
+                </MudNavLink>
+                
+                <MudNavLink Href="teacher/evaluations" Icon="@Icons.Material.Filled.Rule">
+                    Evaluations
+                </MudNavLink>
+                
+                <MudNavLink Href="teacher/schedule" Icon="@Icons.Material.Filled.CalendarMonth">
+                    Schedule
+                </MudNavLink>
+            </AuthorizeView>
+
+            <!-- ADMIN PORTAL MENUS -->
+            <AuthorizeView Roles="Admin" Context="adminCtx">
+                <MudText Typo="Typo.overline" Class="px-4 py-2 mt-2 d-block" Color="Color.Secondary" Style="font-weight: 700; letter-spacing: 0.08em;">Admin Portal</MudText>
+                
+                <MudNavLink Href="admin/dashboard" Icon="@Icons.Material.Filled.AdminPanelSettings" Match="NavLinkMatch.All">
+                    Dashboard
+                </MudNavLink>
+                
+                <MudNavLink Href="admin/users" Icon="@Icons.Material.Filled.People">
+                    Manage Directory
+                </MudNavLink>
+
+                <MudNavLink Href="admin/courses" Icon="@Icons.Material.Filled.Book">
+                    Course Management
+                </MudNavLink>
+
+                <MudNavLink Href="admin/settings" Icon="@Icons.Material.Filled.Settings">
+                    System Settings
+                </MudNavLink>
+            </AuthorizeView>
+
+            <MudDivider Class="my-4" />
+
+            <MudNavLink OnClick="Logout" Icon="@Icons.Material.Filled.Logout" IconColor="Color.Error">
+                <MudText Color="Color.Error" Style="font-weight: 600;">Log out</MudText>
+            </MudNavLink>
         </Authorized>
     </AuthorizeView>
-</div>
+</MudNavMenu>
 
 @code {
-    private string GetInitials(string fullName)
-    {
-        if (string.IsNullOrWhiteSpace(fullName) || fullName == "admin" || fullName == "teacher" || fullName == "student") return "AC";
-        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 1) return parts[0][0].ToString().ToUpper();
-        return (parts[0][0].ToString() + parts[^1][0].ToString()).ToUpper();
-    }
-
     private async Task Logout()
     {
         await AuthStateProvider.MarkUserAsLoggedOut();

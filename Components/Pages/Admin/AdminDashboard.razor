@@ -7,365 +7,324 @@
 
 <AuthorizeView Roles="Admin" Context="authContext">
     <Authorized>
-
-<div class="container-fluid py-4 px-xl-5">
-    <!-- Header Section -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="fw-bold mb-1" style="color: var(--dark); font-size: 2.2rem;">System administration</h1>
-            <p class="text-secondary mb-0">Manage users, adjust system roles, and monitor system activities.</p>
-        </div>
-        <button @onclick="ShowAddUserModal" class="btn btn-primary-custom d-flex align-items-center shadow-sm">
-            <i class="bi bi-person-plus-fill me-2" style="font-size: 1.1rem;"></i>
-            <span>Add New User</span>
-        </button>
-    </div>
-
-    <!-- Analytics Section -->
-    <div class="row g-4 mb-5">
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="dashboard-card">
-                <div class="stat-icon bg-primary-subtle text-primary">
-                    <i class="bi bi-people-fill"></i>
+        <div class="w-100">
+            <!-- Header Section -->
+            <div class="d-flex justify-between align-center mb-6">
+                <div>
+                    <MudText Typo="Typo.h4" Class="font-weight-bold mb-1" Style="font-family: 'Outfit', sans-serif;">System administration</MudText>
+                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Manage users, adjust system roles, and monitor system activities.</MudText>
                 </div>
-                <div class="text-secondary small fw-semibold text-uppercase mb-1">Total Users</div>
-                <h3 class="fw-bold mb-0 text-dark">@totalUsersCount</h3>
+                <MudButton OnClick="ShowAddUserModal" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" Class="py-2 px-4 font-weight-bold" Style="text-transform: none; border-radius: 8px;">
+                    Add New User
+                </MudButton>
             </div>
-        </div>
 
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="dashboard-card">
-                <div class="stat-icon bg-success-subtle text-success">
-                    <i class="bi bi-mortarboard-fill"></i>
-                </div>
-                <div class="text-secondary small fw-semibold text-uppercase mb-1">Total Students</div>
-                <h3 class="fw-bold mb-0 text-dark">@studentsCount</h3>
-            </div>
-        </div>
+            <!-- KPI Row -->
+            <MudGrid Class="mb-6">
+                <MudItem XS="12" SM="6" MD="3">
+                    <MudPaper Class="pa-6 border d-flex align-center gap-4" Elevation="0" Style="background-color: white; border-radius: 12px; height: 100%;">
+                        <div class="d-flex align-center justify-center rounded-lg" style="width: 48px; height: 48px; background-color: var(--mud-palette-primary-lighten); color: var(--mud-palette-primary);">
+                            <MudIcon Icon="@Icons.Material.Filled.People" />
+                        </div>
+                        <div>
+                            <MudText Typo="Typo.overline" Color="Color.Secondary" Style="font-weight: 700;">Total Users</MudText>
+                            <MudText Typo="Typo.h4" Class="font-weight-bold" Style="font-family: 'Outfit', sans-serif;">@totalUsersCount</MudText>
+                        </div>
+                    </MudPaper>
+                </MudItem>
+                <MudItem XS="12" SM="6" MD="3">
+                    <MudPaper Class="pa-6 border d-flex align-center gap-4" Elevation="0" Style="background-color: white; border-radius: 12px; height: 100%;">
+                        <div class="d-flex align-center justify-center rounded-lg" style="width: 48px; height: 48px; background-color: var(--mud-palette-success-lighten); color: var(--mud-palette-success);">
+                            <MudIcon Icon="@Icons.Material.Filled.School" />
+                        </div>
+                        <div>
+                            <MudText Typo="Typo.overline" Color="Color.Secondary" Style="font-weight: 700;">Total Students</MudText>
+                            <MudText Typo="Typo.h4" Class="font-weight-bold" Style="font-family: 'Outfit', sans-serif;">@studentsCount</MudText>
+                        </div>
+                    </MudPaper>
+                </MudItem>
+                <MudItem XS="12" SM="6" MD="3">
+                    <MudPaper Class="pa-6 border d-flex align-center gap-4" Elevation="0" Style="background-color: white; border-radius: 12px; height: 100%;">
+                        <div class="d-flex align-center justify-center rounded-lg" style="width: 48px; height: 48px; background-color: var(--mud-palette-warning-lighten); color: var(--mud-palette-warning);">
+                            <MudIcon Icon="@Icons.Material.Filled.WorkspacePremium" />
+                        </div>
+                        <div>
+                            <MudText Typo="Typo.overline" Color="Color.Secondary" Style="font-weight: 700;">Total Teachers</MudText>
+                            <MudText Typo="Typo.h4" Class="font-weight-bold" Style="font-family: 'Outfit', sans-serif;">@teachersCount</MudText>
+                        </div>
+                    </MudPaper>
+                </MudItem>
+                <MudItem XS="12" SM="6" MD="3">
+                    <MudPaper Class="pa-6 border d-flex align-center gap-4" Elevation="0" Style="background-color: white; border-radius: 12px; height: 100%;">
+                        <div class="d-flex align-center justify-center rounded-lg" style="width: 48px; height: 48px; background-color: var(--mud-palette-error-lighten); color: var(--mud-palette-error);">
+                            <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" />
+                        </div>
+                        <div>
+                            <MudText Typo="Typo.overline" Color="Color.Secondary" Style="font-weight: 700;">Total Admins</MudText>
+                            <MudText Typo="Typo.h4" Class="font-weight-bold" Style="font-family: 'Outfit', sans-serif;">@adminsCount</MudText>
+                        </div>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
 
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="dashboard-card">
-                <div class="stat-icon bg-warning-subtle text-warning">
-                    <i class="bi bi-person-workspace"></i>
-                </div>
-                <div class="text-secondary small fw-semibold text-uppercase mb-1">Total Teachers</div>
-                <h3 class="fw-bold mb-0 text-dark">@teachersCount</h3>
-            </div>
-        </div>
-
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="dashboard-card">
-                <div class="stat-icon bg-danger-subtle text-danger">
-                    <i class="bi bi-shield-lock-fill"></i>
-                </div>
-                <div class="text-secondary small fw-semibold text-uppercase mb-1">Total Admins</div>
-                <h3 class="fw-bold mb-0 text-dark">@adminsCount</h3>
-            </div>
-        </div>
-    </div>
-
-    <!-- User Grid Section -->
-    <div class="dashboard-card p-4 mb-4">
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
-            <h4 class="fw-bold mb-0" style="color: var(--dark);">User Directory</h4>
-            
-            <div class="d-flex flex-wrap gap-2 align-items-center">
-                <!-- Search -->
-                <div class="position-relative" style="min-width: 250px;">
-                    <i class="bi bi-search text-secondary position-absolute" style="left: 12px; top: 10px; font-size: 0.95rem;"></i>
-                    <input type="text" @bind-value="searchTerm" @bind-value:event="oninput" @onkeyup="FilterUsers" class="form-control form-control-custom ps-5 py-2" placeholder="Search by name or username..." />
-                </div>
-
-                <!-- Filter -->
-                <select class="form-select form-control-custom py-2" style="min-width: 150px;" @onchange="OnRoleFilterChanged">
-                    <option value="All">All Roles</option>
-                    <option value="Admin">Administrators</option>
-                    <option value="Teacher">Teachers</option>
-                    <option value="Student">Students</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="custom-table-container">
-            <table class="table custom-table">
-                <thead>
-                    <tr>
-                        <th>User Info</th>
-                        <th>Role</th>
-                        <th>Details</th>
-                        <th>Registered</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (filteredUsers == null || !filteredUsers.Any())
-                    {
-                        <tr>
-                            <td colspan="5" class="text-center py-5 text-secondary">
-                                <i class="bi bi-people text-muted mb-2 d-block" style="font-size: 2.5rem;"></i>
-                                <p class="mb-0 fw-semibold">No users found matching current filters.</p>
-                            </td>
-                        </tr>
-                    }
-                    else
-                    {
-                        @foreach (var user in filteredUsers)
-                        {
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="stat-icon bg-primary-subtle text-primary mb-0 me-3 d-none d-sm-flex" style="width: 40px; height: 40px; border-radius: 10px; font-size: 1.1rem;">
-                                            @if (user.Role == UserRole.Admin)
-                                            {
-                                                <i class="bi bi-shield-lock-fill text-danger"></i>
-                                            }
-                                            else if (user.Role == UserRole.Teacher)
-                                            {
-                                                <i class="bi bi-person-workspace text-warning"></i>
-                                            }
-                                            else
-                                            {
-                                                <i class="bi bi-mortarboard-fill text-primary"></i>
-                                            }
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold text-dark">@user.FullName</div>
-                                            <div class="text-secondary small d-flex align-items-center">
-                                                <span class="me-2">@@@user.Username</span>
-                                                <span class="text-slate-300">•</span>
-                                                <span class="ms-2">@user.Email</span>
-                                            </div>
+            <!-- User Directory Table -->
+            <MudCard Class="border mb-4" Elevation="0" Style="background-color: white; border-radius: 12px;">
+                <MudCardHeader Class="pb-2">
+                    <CardHeaderContent>
+                        <div class="d-flex flex-column flex-md-row justify-between align-start align-md-center gap-4">
+                            <MudText Typo="Typo.h5" Class="font-weight-bold" Style="font-family: 'Outfit', sans-serif;">User Directory</MudText>
+                            
+                            <div class="d-flex flex-wrap gap-3 align-center" style="min-width: 320px;">
+                                <!-- Search Input -->
+                                <MudTextField @bind-Value="searchTerm" Placeholder="Search by name or username..." 
+                                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" 
+                                              Variant="Variant.Outlined" Margin="Margin.Dense" Class="bg-white rounded-lg" Immediate="true" />
+                                
+                                <!-- Role Filter Select -->
+                                <MudSelect T="string" @bind-Value="roleFilter" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 150px;">
+                                    <MudSelectItem Value="@("All")">All Roles</MudSelectItem>
+                                    <MudSelectItem Value="@("Admin")">Administrators</MudSelectItem>
+                                    <MudSelectItem Value="@("Teacher")">Teachers</MudSelectItem>
+                                    <MudSelectItem Value="@("Student")">Students</MudSelectItem>
+                                </MudSelect>
+                            </div>
+                        </div>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudTable Items="filteredUsers" Elevation="0" Class="border-0" Hover="true">
+                        <HeaderContent>
+                            <MudTh>User Info</MudTh>
+                            <MudTh>Role</MudTh>
+                            <MudTh>Details</MudTh>
+                            <MudTh>Registered</MudTh>
+                            <MudTh Style="text-align: right;">Actions</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="User Info">
+                                <div class="d-flex align-center">
+                                    <MudAvatar Color="@GetRoleAvatarColor(context.Role)" Variant="Variant.Text" Class="mr-3" Style="@($"background-color: {GetRoleAvatarBg(context.Role)}; font-weight: bold; border-radius: 8px;")">
+                                        <MudIcon Icon="@GetRoleIcon(context.Role)" />
+                                    </MudAvatar>
+                                    <div>
+                                        <MudText Typo="Typo.body2" Class="font-weight-bold">@context.FullName</MudText>
+                                        <div class="d-flex align-center gap-1">
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@@@context.Username</MudText>
+                                            <span style="color: var(--mud-palette-text-disabled); font-size: 0.8rem;">•</span>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@context.Email</MudText>
                                         </div>
                                     </div>
-                                </td>
-                                <td>
-                                    @if (user.Role == UserRole.Admin)
+                                </div>
+                            </MudTd>
+                            <MudTd DataLabel="Role">
+                                <MudChip T="string" Color="@GetRoleAvatarColor(context.Role)" Size="Size.Small" Style="font-weight: bold; border-radius: 4px;">
+                                    @context.Role
+                                </MudChip>
+                            </MudTd>
+                            <MudTd DataLabel="Details">
+                                <div class="d-flex flex-column">
+                                    @if (context.Role == UserRole.Student)
                                     {
-                                        <span class="badge-role badge-admin">Admin</span>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">ID: <b>@context.StudentId</b></MudText>
+                                        <div class="d-flex align-center gap-1">
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">GPA:</MudText>
+                                            <MudChip T="string" Color="Color.Success" Variant="Variant.Text" Size="Size.Small" Class="pa-0 font-weight-bold" Style="height: 18px; font-family: monospace;">@context.GPA?.ToString("0.00")</MudChip>
+                                        </div>
                                     }
-                                    else if (user.Role == UserRole.Teacher)
+                                    else if (context.Role == UserRole.Teacher)
                                     {
-                                        <span class="badge-role badge-teacher">Teacher</span>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Dept: <b>@context.Department</b></MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">ID: <b>@context.TeacherId</b></MudText>
                                     }
                                     else
                                     {
-                                        <span class="badge-role badge-student">Student</span>
+                                        <span style="color: var(--mud-palette-text-disabled);">—</span>
                                     }
-                                </td>
-                                <td>
-                                    <div class="small">
-                                        @if (user.Role == UserRole.Student)
-                                        {
-                                            <span class="text-slate-500">ID:</span> <span class="fw-semibold text-dark">@user.StudentId</span>
-                                            <br />
-                                            <span class="text-slate-500">GPA:</span> <span class="badge bg-success-subtle text-success font-monospace">@user.GPA?.ToString("0.00")</span>
-                                        }
-                                        else if (user.Role == UserRole.Teacher)
-                                        {
-                                            <span class="text-slate-500">Dept:</span> <span class="fw-semibold text-dark">@user.Department</span>
-                                            <br />
-                                            <span class="text-slate-500">ID:</span> <span class="fw-semibold text-dark">@user.TeacherId</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-slate-400">—</span>
-                                        }
-                                    </div>
-                                </td>
-                                <td class="text-secondary small">
-                                    @user.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")
-                                </td>
-                                <td class="text-end">
-                                    <button @onclick="() => ShowEditUserModal(user)" class="btn btn-sm btn-outline-primary border-0 me-1" title="Edit User">
-                                        <i class="bi bi-pencil-square" style="font-size: 1.1rem;"></i>
-                                    </button>
-                                    <button @onclick="() => ConfirmDeleteUser(user)" class="btn btn-sm btn-outline-danger border-0" title="Delete User">
-                                        <i class="bi bi-trash-fill" style="font-size: 1.1rem;"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        }
+                                </div>
+                            </MudTd>
+                            <MudTd DataLabel="Registered">
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">@context.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</MudText>
+                            </MudTd>
+                            <MudTd DataLabel="Actions" Style="text-align: right;">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" OnClick="() => ShowEditUserModal(context)" Size="Size.Small" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => ConfirmDeleteUser(context)" Size="Size.Small" />
+                            </MudTd>
+                        </RowTemplate>
+                        <NoRecordsContent>
+                            <div class="text-center py-6 text-secondary">
+                                <MudIcon Icon="@Icons.Material.Filled.PeopleOutline" Style="font-size: 2.5rem;" Color="Color.Default" Class="mb-2" />
+                                <MudText Typo="Typo.body2" Style="font-weight: bold;">No users found matching current filters.</MudText>
+                            </div>
+                        </NoRecordsContent>
+                    </MudTable>
+                </MudCardContent>
+            </MudCard>
+
+            <!-- Modal: Add / Edit User -->
+            <MudDialog @bind-Visible="isUserModalVisible" Options="_userDialogOptions">
+                <TitleContent>
+                    <MudText Typo="Typo.h6" Class="font-weight-bold" Style="font-family: 'Outfit', sans-serif;">
+                        @(editingUser.Id == 0 ? "Add New User" : "Edit User Profile")
+                    </MudText>
+                </TitleContent>
+                <DialogContent>
+                    @if (!string.IsNullOrEmpty(modalErrorMessage))
+                    {
+                        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4 rounded-lg" Elevation="0">
+                            @modalErrorMessage
+                        </MudAlert>
                     }
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
 
-<!-- Modal: Add / Edit User -->
-@if (isUserModalVisible)
-{
-    <div class="custom-modal-backdrop">
-        <div class="custom-modal-content">
-            <div class="auth-header py-3 px-4 d-flex justify-content-between align-items-center">
-                <h4 class="fw-bold mb-0">@(editingUser.Id == 0 ? "Add New User" : "Edit User Profile")</h4>
-                <button type="button" class="btn-close btn-close-white" @onclick="CloseUserModal"></button>
-            </div>
-            
-            <div class="auth-body p-4">
-                @if (!string.IsNullOrEmpty(modalErrorMessage))
-                {
-                    <div class="alert alert-danger border-0 mb-3" style="border-radius: 8px;">
-                        @modalErrorMessage
+                    <EditForm Model="editingUser" OnValidSubmit="SaveUser" FormName="UserEditForm">
+                        <DataAnnotationsValidator />
+
+                        <MudGrid Class="g-3">
+                            <MudItem XS="12" SM="6">
+                                <MudTextField Label="Username" @bind-Value="editingUser.Username" 
+                                              For="() => editingUser.Username" Variant="Variant.Outlined" 
+                                              Disabled="@(editingUser.Id != 0)" Placeholder="Enter username" Margin="Margin.Dense" Required="true" />
+                            </MudItem>
+
+                            <MudItem XS="12" SM="6">
+                                <MudTextField Label="Full Name" @bind-Value="editingUser.FullName" 
+                                              For="() => editingUser.FullName" Variant="Variant.Outlined" 
+                                              Placeholder="Enter full name" Margin="Margin.Dense" Required="true" />
+                            </MudItem>
+
+                            <MudItem XS="12" SM="6">
+                                <MudTextField Label="Email Address" @bind-Value="editingUser.Email" 
+                                              For="() => editingUser.Email" Variant="Variant.Outlined" 
+                                              Placeholder="Enter email" Margin="Margin.Dense" Required="true" />
+                            </MudItem>
+
+                            <MudItem XS="12" SM="6">
+                                <MudSelect T="UserRole" Label="System Role" @bind-Value="editingUser.Role" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true">
+                                    <MudSelectItem Value="UserRole.Student">Student</MudSelectItem>
+                                    <MudSelectItem Value="UserRole.Teacher">Teacher</MudSelectItem>
+                                    <MudSelectItem Value="UserRole.Admin">Administrator</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+
+                            @if (editingUser.Id == 0)
+                            {
+                                <MudItem XS="12">
+                                    <MudTextField Label="Password" @bind-Value="newUserPassword" 
+                                                  Variant="Variant.Outlined" InputType="InputType.Password"
+                                                  Placeholder="Enter temporary password" Margin="Margin.Dense" Required="true" />
+                                </MudItem>
+                            }
+
+                            <!-- Dynamic Section for Students -->
+                            @if (editingUser.Role == UserRole.Student)
+                            {
+                                <MudItem XS="12">
+                                    <MudCard Outlined="true" Class="pa-4 border" Style="background-color: var(--mud-palette-background-gray); border-radius: 8px;">
+                                        <div class="d-flex align-center mb-3">
+                                            <MudIcon Icon="@Icons.Material.Filled.School" Color="Color.Primary" Class="mr-2" />
+                                            <MudText Typo="Typo.subtitle2" Class="font-weight-bold">Student Details</MudText>
+                                        </div>
+                                        <MudGrid Class="g-2">
+                                            <MudItem XS="12" SM="6">
+                                                <MudTextField Label="Student ID (Optional)" @bind-Value="editingUser.StudentId" 
+                                                              Variant="Variant.Outlined" Placeholder="e.g. STU-2026-001" Margin="Margin.Dense" />
+                                            </MudItem>
+                                            <MudItem XS="12" SM="6">
+                                                <MudSelect T="string" Label="Grade Level" @bind-Value="editingUser.GradeLevel" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                                    <MudSelectItem Value="@("")">Select Grade</MudSelectItem>
+                                                    <MudSelectItem Value="@("Freshman (1st Year)")">Freshman (1st Year)</MudSelectItem>
+                                                    <MudSelectItem Value="@("Sophomore (2nd Year)")">Sophomore (2nd Year)</MudSelectItem>
+                                                    <MudSelectItem Value="@("Junior (3rd Year)")">Junior (3rd Year)</MudSelectItem>
+                                                    <MudSelectItem Value="@("Senior (4th Year)")">Senior (4th Year)</MudSelectItem>
+                                                </MudSelect>
+                                            </MudItem>
+                                            <MudItem XS="6">
+                                                <MudNumericField T="double?" Label="GPA" @bind-Value="editingUser.GPA" 
+                                                                 Min="0.0" Max="4.0" Step="0.01" Format="0.00" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                                            </MudItem>
+                                            <MudItem XS="6">
+                                                <MudNumericField T="double?" Label="Attendance Rate (%)" @bind-Value="editingUser.AttendanceRate" 
+                                                                 Min="0.0" Max="100.0" Step="0.1" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                                            </MudItem>
+                                        </MudGrid>
+                                    </MudCard>
+                                </MudItem>
+                            }
+
+                            <!-- Dynamic Section for Teachers -->
+                            @if (editingUser.Role == UserRole.Teacher)
+                            {
+                                <MudItem XS="12">
+                                    <MudCard Outlined="true" Class="pa-4 border" Style="background-color: var(--mud-palette-background-gray); border-radius: 8px;">
+                                        <div class="d-flex align-center mb-3">
+                                            <MudIcon Icon="@Icons.Material.Filled.WorkspacePremium" Color="Color.Warning" Class="mr-2" />
+                                            <MudText Typo="Typo.subtitle2" Class="font-weight-bold">Teacher Details</MudText>
+                                        </div>
+                                        <MudGrid Class="g-2">
+                                            <MudItem XS="12" SM="6">
+                                                <MudTextField Label="Teacher ID (Optional)" @bind-Value="editingUser.TeacherId" 
+                                                              Variant="Variant.Outlined" Placeholder="e.g. TCH-2026-042" Margin="Margin.Dense" />
+                                            </MudItem>
+                                            <MudItem XS="12" SM="6">
+                                                <MudSelect T="string" Label="Department" @bind-Value="editingUser.Department" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                                    <MudSelectItem Value="@("")">Select Department</MudSelectItem>
+                                                    <MudSelectItem Value="@("Computer Science & Engineering")">Computer Science & Engineering</MudSelectItem>
+                                                    <MudSelectItem Value="@("Mathematics")">Mathematics</MudSelectItem>
+                                                    <MudSelectItem Value="@("Physics")">Physics</MudSelectItem>
+                                                    <MudSelectItem Value="@("Chemistry")">Chemistry</MudSelectItem>
+                                                    <MudSelectItem Value="@("Humanities")">Humanities</MudSelectItem>
+                                                </MudSelect>
+                                            </MudItem>
+                                            <MudItem XS="12">
+                                                <MudTextField Label="Office Room" @bind-Value="editingUser.OfficeRoom" 
+                                                              Variant="Variant.Outlined" Placeholder="e.g. Science Hall, Rm 302" Margin="Margin.Dense" />
+                                            </MudItem>
+                                            <MudItem XS="12">
+                                                <MudTextField Label="Biography" @bind-Value="editingUser.Bio" Lines="2"
+                                                              Variant="Variant.Outlined" Placeholder="Brief professional background..." Margin="Margin.Dense" />
+                                            </MudItem>
+                                        </MudGrid>
+                                    </MudCard>
+                                </MudItem>
+                            }
+                        </MudGrid>
+
+                        <div class="d-flex justify-end gap-3 mt-6">
+                            <MudButton OnClick="CloseUserModal" Variant="Variant.Text" Color="Color.Secondary" Style="text-transform: none; font-weight: bold;">Cancel</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" Style="text-transform: none; font-weight: bold; border-radius: 8px;">Save Changes</MudButton>
+                        </div>
+                    </EditForm>
+                </DialogContent>
+            </MudDialog>
+
+            <!-- Modal: Delete Confirmation -->
+            <MudDialog @bind-Visible="isDeleteModalVisible" Options="_deleteDialogOptions">
+                <TitleContent>
+                    <MudText Typo="Typo.h6" Class="font-weight-bold" Style="font-family: 'Outfit', sans-serif;">Confirm Deletion</MudText>
+                </TitleContent>
+                <DialogContent>
+                    <div class="text-center py-4">
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Style="font-size: 3rem;" Class="mb-3" />
+                        <MudText Typo="Typo.h6" Class="font-weight-bold mb-2">Delete Account?</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="px-4">
+                            Are you sure you want to delete user <strong>@userToDelete?.FullName</strong> (@@@userToDelete?.Username)?
+                            This action is permanent and cannot be undone.
+                        </MudText>
                     </div>
-                }
-
-                <EditForm Model="editingUser" OnValidSubmit="SaveUser" FormName="UserEditForm">
-                    <DataAnnotationsValidator />
-
-                    <div class="row g-3">
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold small text-secondary">Username</label>
-                            <InputText @bind-Value="editingUser.Username" class="form-control form-control-custom" disabled="@(editingUser.Id != 0)" placeholder="Enter username" />
-                            <ValidationMessage For="() => editingUser.Username" />
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold small text-secondary">Full Name</label>
-                            <InputText @bind-Value="editingUser.FullName" class="form-control form-control-custom" placeholder="Enter full name" />
-                            <ValidationMessage For="() => editingUser.FullName" />
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold small text-secondary">Email Address</label>
-                            <InputText @bind-Value="editingUser.Email" class="form-control form-control-custom" placeholder="Enter email" />
-                            <ValidationMessage For="() => editingUser.Email" />
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold small text-secondary">System Role</label>
-                            <InputSelect @bind-Value="editingUser.Role" class="form-select form-control-custom">
-                                <option value="Student">Student</option>
-                                <option value="Teacher">Teacher</option>
-                                <option value="Admin">Administrator</option>
-                            </InputSelect>
-                        </div>
-
-                        @if (editingUser.Id == 0)
-                        {
-                            <div class="col-12">
-                                <label class="form-label fw-semibold small text-secondary">Password</label>
-                                <input type="password" @bind="newUserPassword" class="form-control form-control-custom" placeholder="Enter temporary password" required />
-                            </div>
-                        }
-
-                        <!-- Dynamic Section for Students -->
-                        @if (editingUser.Role == UserRole.Student)
-                        {
-                            <div class="col-12 p-3 bg-light rounded-3 mt-3 border">
-                                <h6 class="fw-bold mb-3 text-primary d-flex align-items-center">
-                                    <i class="bi bi-mortarboard-fill me-2"></i> Student Details
-                                </h6>
-                                <div class="row g-2">
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label small text-secondary">Student ID (Optional)</label>
-                                        <InputText @bind-Value="editingUser.StudentId" class="form-control form-control-custom py-1" placeholder="e.g. STU-2026-001" />
-                                    </div>
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label small text-secondary">Grade Level</label>
-                                        <InputSelect @bind-Value="editingUser.GradeLevel" class="form-select form-control-custom py-1">
-                                            <option value="">Select Grade</option>
-                                            <option value="Freshman (1st Year)">Freshman (1st Year)</option>
-                                            <option value="Sophomore (2nd Year)">Sophomore (2nd Year)</option>
-                                            <option value="Junior (3rd Year)">Junior (3rd Year)</option>
-                                            <option value="Senior (4th Year)">Senior (4th Year)</option>
-                                        </InputSelect>
-                                    </div>
-                                    <div class="col-6">
-                                        <label class="form-label small text-secondary">GPA</label>
-                                        <InputNumber @bind-Value="editingUser.GPA" class="form-control form-control-custom py-1" step="0.01" min="0" max="4" />
-                                    </div>
-                                    <div class="col-6">
-                                        <label class="form-label small text-secondary">Attendance Rate (%)</label>
-                                        <InputNumber @bind-Value="editingUser.AttendanceRate" class="form-control form-control-custom py-1" step="0.1" min="0" max="100" />
-                                    </div>
-                                </div>
-                            </div>
-                        }
-
-                        <!-- Dynamic Section for Teachers -->
-                        @if (editingUser.Role == UserRole.Teacher)
-                        {
-                            <div class="col-12 p-3 bg-light rounded-3 mt-3 border">
-                                <h6 class="fw-bold mb-3 text-warning d-flex align-items-center">
-                                    <i class="bi bi-person-workspace me-2"></i> Teacher Details
-                                </h6>
-                                <div class="row g-2">
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label small text-secondary">Teacher ID (Optional)</label>
-                                        <InputText @bind-Value="editingUser.TeacherId" class="form-control form-control-custom py-1" placeholder="e.g. TCH-2026-042" />
-                                    </div>
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label small text-secondary">Department</label>
-                                        <InputSelect @bind-Value="editingUser.Department" class="form-select form-control-custom py-1">
-                                            <option value="">Select Department</option>
-                                            <option value="Computer Science & Engineering">Computer Science & Engineering</option>
-                                            <option value="Mathematics">Mathematics</option>
-                                            <option value="Physics">Physics</option>
-                                            <option value="Chemistry">Chemistry</option>
-                                            <option value="Humanities">Humanities</option>
-                                        </InputSelect>
-                                    </div>
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label small text-secondary">Office Room</label>
-                                        <InputText @bind-Value="editingUser.OfficeRoom" class="form-control form-control-custom py-1" placeholder="e.g. Science Hall, Rm 302" />
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label small text-secondary">Biography</label>
-                                        <InputTextArea @bind-Value="editingUser.Bio" class="form-control form-control-custom py-1" rows="2" placeholder="Brief professional background..." />
-                                    </div>
-                                </div>
-                            </div>
-                        }
+                </DialogContent>
+                <DialogActions>
+                    <div class="d-flex justify-center gap-3 w-100 pb-4">
+                        <MudButton OnClick="CloseDeleteModal" Variant="Variant.Text" Color="Color.Secondary" Style="text-transform: none; font-weight: bold; width: 120px;">Cancel</MudButton>
+                        <MudButton OnClick="DeleteUser" Variant="Variant.Filled" Color="Color.Error" Style="text-transform: none; font-weight: bold; border-radius: 8px; width: 160px;">Delete Permanently</MudButton>
                     </div>
-
-                    <div class="d-flex justify-content-end gap-2 mt-4">
-                        <button type="button" class="btn btn-secondary-custom" @onclick="CloseUserModal">Cancel</button>
-                        <button type="submit" class="btn btn-primary-custom d-flex align-items-center">
-                            <i class="bi bi-save me-2"></i> Save Changes
-                        </button>
-                    </div>
-                </EditForm>
-            </div>
+                </DialogActions>
+            </MudDialog>
         </div>
-    </div>
-}
-
-<!-- Modal: Delete Confirmation -->
-@if (isDeleteModalVisible)
-{
-    <div class="custom-modal-backdrop">
-        <div class="custom-modal-content" style="max-width: 450px;">
-            <div class="auth-header bg-danger py-3 px-4 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, var(--danger) 0%, var(--danger-hover) 100%);">
-                <h4 class="fw-bold mb-0">Confirm Deletion</h4>
-                <button type="button" class="btn-close btn-close-white" @onclick="CloseDeleteModal"></button>
-            </div>
-            <div class="auth-body p-4 text-center">
-                <i class="bi bi-exclamation-octagon-fill text-danger mb-3" style="font-size: 3rem;"></i>
-                <h5 class="fw-bold mb-2">Delete Account?</h5>
-                <p class="text-secondary small mb-4">
-                    Are you sure you want to delete user <strong>@userToDelete?.FullName</strong> (@@@userToDelete?.Username)?
-                    This action is permanent and cannot be undone.
-                </p>
-                <div class="d-flex justify-content-center gap-2">
-                    <button type="button" class="btn btn-secondary-custom px-4" @onclick="CloseDeleteModal">Cancel</button>
-                    <button type="button" class="btn btn-danger py-2 px-4 fw-semibold shadow-sm border-0" style="border-radius: 8px; background-color: var(--danger);" @onclick="DeleteUser">
-                        Delete Permanently
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
     </Authorized>
     <NotAuthorized>
         <!-- Premium Loader during pre-render session loading -->
-        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 80vh;">
-            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <p class="mt-3 text-secondary fw-semibold">Loading Admin Portal...</p>
+        <div class="d-flex flex-column align-center justify-center" style="min-height: 80vh;">
+            <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+            <MudText Class="mt-4 text-secondary font-weight-bold">Loading Admin Portal...</MudText>
         </div>
     </NotAuthorized>
 </AuthorizeView>
@@ -373,8 +332,35 @@
 @code {
     private List<User> allUsers = new();
     private List<User> filteredUsers = new();
-    private string searchTerm = string.Empty;
-    private string roleFilter = "All";
+    
+    // Custom getter/setter binds to easily react to search inputs
+    private string _searchTerm = string.Empty;
+    private string searchTerm
+    {
+        get => _searchTerm;
+        set
+        {
+            if (_searchTerm != value)
+            {
+                _searchTerm = value;
+                FilterUsers();
+            }
+        }
+    }
+
+    private string _roleFilter = "All";
+    private string roleFilter
+    {
+        get => _roleFilter;
+        set
+        {
+            if (_roleFilter != value)
+            {
+                _roleFilter = value;
+                FilterUsers();
+            }
+        }
+    }
 
     // Analytics Counts
     private int totalUsersCount;
@@ -389,6 +375,9 @@
     private string newUserPassword = string.Empty;
     private User? userToDelete;
     private string? modalErrorMessage;
+
+    private readonly DialogOptions _userDialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true };
+    private readonly DialogOptions _deleteDialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
 
     protected override async Task OnInitializedAsync()
     {
@@ -449,12 +438,7 @@
         }
 
         filteredUsers = result.ToList();
-    }
-
-    private void OnRoleFilterChanged(ChangeEventArgs e)
-    {
-        roleFilter = e.Value?.ToString() ?? "All";
-        FilterUsers();
+        StateHasChanged();
     }
 
     // Modal Control: Add
@@ -553,9 +537,42 @@
             }
             catch (Exception ex)
             {
-                // Simple logging or feedback
                 Console.WriteLine($"Error deleting user: {ex.Message}");
             }
         }
+    }
+
+    // Helper functions for tables and chips
+    private Color GetRoleAvatarColor(UserRole role)
+    {
+        return role switch
+        {
+            UserRole.Admin => Color.Error,
+            UserRole.Teacher => Color.Warning,
+            UserRole.Student => Color.Primary,
+            _ => Color.Default
+        };
+    }
+
+    private string GetRoleAvatarBg(UserRole role)
+    {
+        return role switch
+        {
+            UserRole.Admin => "var(--mud-palette-error-lighten)",
+            UserRole.Teacher => "var(--mud-palette-warning-lighten)",
+            UserRole.Student => "var(--mud-palette-primary-lighten)",
+            _ => "var(--mud-palette-background-grey)"
+        };
+    }
+
+    private string GetRoleIcon(UserRole role)
+    {
+        return role switch
+        {
+            UserRole.Admin => Icons.Material.Filled.AdminPanelSettings,
+            UserRole.Teacher => Icons.Material.Filled.WorkspacePremium,
+            UserRole.Student => Icons.Material.Filled.School,
+            _ => Icons.Material.Filled.Person
+        };
     }
 }
