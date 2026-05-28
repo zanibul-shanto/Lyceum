@@ -7,129 +7,149 @@
 
 <AuthorizeView Roles="Student" Context="authContext">
     <Authorized>
-        <div class="w-100">
-            <!-- Header Section -->
-            <div class="d-flex justify-between align-center mb-6">
+        <div class="container-fluid p-0">
+            <!-- Premium Seamless Page Header -->
+            <div class="premium-page-header">
                 <div>
-                    <MudText Typo="Typo.h4" Class="font-weight-bold" Style="font-family: 'Outfit', sans-serif;">Dashboard</MudText>
-                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Spring 2026</MudText>
+                    <h1 class="page-title-modern">Dashboard</h1>
+                    <div class="page-subtitle-modern">Spring 2026</div>
                 </div>
-                <MudPaper Class="d-flex align-center pa-2 border" Elevation="0" Style="background-color: white; border-radius: 8px;">
-                    <MudAvatar Color="Color.Primary" Variant="Variant.Filled" Class="mr-3" Style="font-weight: 700; font-family: 'Outfit', sans-serif;">
-                        @GetInitials(currentStudent?.FullName ?? "Alex Chen")
-                    </MudAvatar>
-                    <div>
-                        <MudText Typo="Typo.body2" Class="font-weight-bold">@(currentStudent?.FullName ?? "Alex Chen")</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Student</MudText>
+                <div class="header-right-block">
+                    <!-- Outlined Header Profile Card matching new design -->
+                    <div class="header-profile-card">
+                        <div class="header-avatar-circle">
+                            @GetInitials(currentStudent?.FullName ?? "Alex Chen")
+                        </div>
+                        <div>
+                            <div class="header-user-name">@(currentStudent?.FullName ?? "Alex Chen")</div>
+                            <div class="header-user-role">Student</div>
+                        </div>
                     </div>
-                </MudPaper>
+                </div>
             </div>
 
-            <!-- KPI Row -->
-            <MudGrid Class="mb-6">
-                <MudItem XS="12" SM="6" MD="3">
-                    <MudPaper Class="pa-6 border" Elevation="0" Style="background-color: white; height: 100%; border-radius: 12px;">
-                        <MudText Typo="Typo.overline" Color="Color.Secondary" Style="font-weight: 700; letter-spacing: 0.06em;">Enrolled Courses</MudText>
-                        <MudText Typo="Typo.h3" Class="font-weight-bold my-2" Color="Color.Primary" Style="font-family: 'Outfit', sans-serif;">6</MudText>
-                        <div class="d-flex align-center gap-2 mt-2">
-                            <MudChip T="string" Size="Size.Small" Color="Color.Info" Class="px-2 font-weight-bold" Style="height: 20px; font-size: 0.72rem; border-radius: 4px;">Spring</MudChip>
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">2026</MudText>
+            <!-- Top KPI Widgets Row (4 Cards) -->
+            <div class="row g-4 mb-4">
+                <!-- Enrolled Courses -->
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Enrolled Courses</div>
+                        <div class="kpi-number">6</div>
+                        <div class="kpi-footer text-secondary">
+                            <span class="badge-spring-kpi">Spring</span> 2026
                         </div>
-                    </MudPaper>
-                </MudItem>
-                <MudItem XS="12" SM="6" MD="3">
-                    <MudPaper Class="pa-6 border" Elevation="0" Style="background-color: white; height: 100%; border-radius: 12px;">
-                        <MudText Typo="Typo.overline" Color="Color.Secondary" Style="font-weight: 700; letter-spacing: 0.06em;">Assignments Due</MudText>
-                        <MudText Typo="Typo.h3" Class="font-weight-bold my-2" Color="Color.Warning" Style="font-family: 'Outfit', sans-serif;">3</MudText>
-                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">This week</MudText>
-                    </MudPaper>
-                </MudItem>
-                <MudItem XS="12" SM="6" MD="3">
-                    <MudPaper Class="pa-6 border" Elevation="0" Style="background-color: white; height: 100%; border-radius: 12px;">
-                        <MudText Typo="Typo.overline" Color="Color.Secondary" Style="font-weight: 700; letter-spacing: 0.06em;">Current GPA</MudText>
-                        <MudText Typo="Typo.h3" Class="font-weight-bold my-2" Color="Color.Success" Style="font-family: 'Outfit', sans-serif;">@(currentStudent?.GPA?.ToString("0.00") ?? "3.70")</MudText>
-                        <MudText Typo="Typo.body2" Color="Color.Success" Class="mt-2" Style="font-weight: bold;">&uarr; <span style="color: var(--mud-palette-text-secondary); font-weight: normal;">from last term</span></MudText>
-                    </MudPaper>
-                </MudItem>
-                <MudItem XS="12" SM="6" MD="3">
-                    <MudPaper Class="pa-6 border" Elevation="0" Style="background-color: white; height: 100%; border-radius: 12px;">
-                        <MudText Typo="Typo.overline" Color="Color.Secondary" Style="font-weight: 700; letter-spacing: 0.06em;">Credits Earned</MudText>
-                        <MudText Typo="Typo.h3" Class="font-weight-bold my-2" Color="Color.Secondary" Style="font-family: 'Outfit', sans-serif;">42</MudText>
-                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">of 120 required</MudText>
-                    </MudPaper>
-                </MudItem>
-            </MudGrid>
+                    </div>
+                </div>
 
-            <!-- My Courses -->
-            <MudText Typo="Typo.h5" Class="font-weight-bold mb-4" Style="font-family: 'Outfit', sans-serif;">My Courses</MudText>
-            <MudGrid Class="mb-6">
+                <!-- Assignments Due -->
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Assignments Due</div>
+                        <div class="kpi-number">3</div>
+                        <div class="kpi-footer text-secondary">This week</div>
+                    </div>
+                </div>
+
+                <!-- Current GPA -->
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Current GPA</div>
+                        <div class="kpi-number">@(currentStudent?.GPA?.ToString("0.0") ?? "3.7")</div>
+                        <div class="kpi-footer text-secondary">
+                            <span class="text-success fw-bold">&uarr;</span> from last term
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Credits Earned -->
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Credits Earned</div>
+                        <div class="kpi-number">42</div>
+                        <div class="kpi-footer text-secondary">of 120 required</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle My Courses Section (3 Cards Row) -->
+            <h5 class="fw-bold mb-3 mt-4 text-dark" style="font-family: 'Outfit', sans-serif;">My Courses</h5>
+            <div class="row g-4 mb-4">
                 @foreach (var course in mockCourses)
                 {
-                    <MudItem XS="12" MD="4">
-                        <MudCard Class="pa-6 border d-flex flex-column justify-space-between" Outlined="true" Style="height: 100%; min-height: 180px; background-color: white; border-radius: 12px;">
+                    <div class="col-12 col-md-4">
+                        <div class="course-card-modern">
                             <div>
-                                <MudText Typo="Typo.overline" Color="Color.Secondary" Style="font-weight: 700;">@course.Code</MudText>
-                                <MudText Typo="Typo.h6" Class="font-weight-bold text-dark mb-4" Style="font-family: 'Outfit', sans-serif; line-height: 1.2;">@course.Title</MudText>
+                                <div class="course-code-modern">@course.Code</div>
+                                <h6 class="course-title-modern">@course.Title</h6>
                             </div>
                             <div>
-                                <div class="d-flex justify-between align-center mb-1">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 600;">Progress</MudText>
-                                    <MudText Typo="Typo.caption" Color="Color.Primary" Style="font-weight: 700;">@course.Progress%</MudText>
+                                <div class="course-progress-header">
+                                    <span>Progress</span>
+                                    <span>@course.Progress%</span>
                                 </div>
-                                <MudProgressLinear Color="Color.Primary" Value="@course.Progress" Class="mb-4" Style="height: 6px; border-radius: 3px;" />
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">Next: <b>@course.NextTask</b></MudText>
+                                <div class="course-progress-bar-container">
+                                    <div class="course-progress-bar-fill" style="width: @course.Progress%;"></div>
+                                </div>
+                                <div class="course-footer-modern">
+                                    Next: @course.NextTask
+                                </div>
                             </div>
-                        </MudCard>
-                    </MudItem>
-                }
-            </MudGrid>
-
-            <!-- Recent Grades -->
-            <MudCard Class="border mb-4" Elevation="0" Style="background-color: white; border-radius: 12px;">
-                <MudCardHeader Class="pb-2">
-                    <CardHeaderContent>
-                        <div class="d-flex justify-between align-center">
-                            <MudText Typo="Typo.h5" Class="font-weight-bold" Style="font-family: 'Outfit', sans-serif;">Recent Grades</MudText>
-                            <MudButton Href="student/grades" Variant="Variant.Text" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Style="text-transform: none; font-weight: bold;">View all</MudButton>
                         </div>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent Class="pa-0">
-                    <MudTable Items="recentGrades" Elevation="0" Class="border-0">
-                        <HeaderContent>
-                            <MudTh>Course</MudTh>
-                            <MudTh>Assignment</MudTh>
-                            <MudTh>Score</MudTh>
-                            <MudTh>Grade</MudTh>
-                            <MudTh>Submitted</MudTh>
-                            <MudTh>Status</MudTh>
-                        </HeaderContent>
-                        <RowTemplate>
-                            <MudTd DataLabel="Course" Style="font-weight: bold;">@context.Course</MudTd>
-                            <MudTd DataLabel="Assignment">@context.Assignment</MudTd>
-                            <MudTd DataLabel="Score" Style="font-family: monospace;">@context.Score</MudTd>
-                            <MudTd DataLabel="Grade">
-                                <MudChip T="string" Size="Size.Small" Color="@GetGradeChipColor(context.Grade)" Variant="Variant.Filled" Style="font-weight: bold; min-width: 32px; border-radius: 4px;">
-                                    @context.Grade
-                                </MudChip>
-                            </MudTd>
-                            <MudTd DataLabel="Submitted">@context.Submitted</MudTd>
-                            <MudTd DataLabel="Status">
-                                <MudChip T="string" Size="Size.Small" Color="@GetStatusChipColor(context.Status)" Variant="Variant.Outlined" Style="text-transform: capitalize; font-weight: bold;">
-                                    @context.Status
-                                </MudChip>
-                            </MudTd>
-                        </RowTemplate>
-                    </MudTable>
-                </MudCardContent>
-            </MudCard>
+                    </div>
+                }
+            </div>
+
+            <!-- Bottom Recent Grades Section (Table Widget) -->
+            <div class="grades-card-modern">
+                <div class="grades-card-header">
+                    <h5 class="grades-card-title">Recent Grades</h5>
+                    <a href="student/grades" class="grades-card-link">View all <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <div class="table-responsive">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Course</th>
+                                <th>Assignment</th>
+                                <th>Score</th>
+                                <th>Grade</th>
+                                <th>Submitted</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var grade in recentGrades)
+                            {
+                                <tr>
+                                    <td class="fw-bold text-dark">@grade.Course</td>
+                                    <td>@grade.Assignment</td>
+                                    <td class="font-monospace">@grade.Score</td>
+                                    <td>
+                                        <span class="badge-grade-modern @GetGradeClass(grade.Grade)">
+                                            @grade.Grade
+                                        </span>
+                                    </td>
+                                    <td>@grade.Submitted</td>
+                                    <td>
+                                        <span class="badge-status-modern @GetStatusClass(grade.Status)">
+                                            @grade.Status
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </Authorized>
     <NotAuthorized>
         <!-- Premium Loader during pre-render session loading -->
-        <div class="d-flex flex-column align-center justify-center" style="min-height: 80vh;">
-            <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
-            <MudText Class="mt-4 text-secondary font-weight-bold">Loading Student Portal...</MudText>
+        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 80vh;">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 text-secondary fw-semibold">Loading Student Portal...</p>
         </div>
     </NotAuthorized>
 </AuthorizeView>
@@ -211,24 +231,24 @@
         return (parts[0][0].ToString() + parts[^1][0].ToString()).ToUpper();
     }
 
-    private Color GetGradeChipColor(string grade)
+    private string GetGradeClass(string grade)
     {
         return grade.Trim().ToUpper() switch
         {
-            "A" or "A-" => Color.Success,
-            "B+" or "B" or "B-" => Color.Primary,
-            "C+" or "C" or "C-" => Color.Warning,
-            _ => Color.Default
+            "A" or "A-" => "badge-grade-a",
+            "B+" or "B" or "B-" => "badge-grade-b",
+            "C+" or "C" or "C-" => "badge-grade-c",
+            _ => "badge-grade-pending"
         };
     }
 
-    private Color GetStatusChipColor(string status)
+    private string GetStatusClass(string status)
     {
         return status.Trim().ToLower() switch
         {
-            "graded" => Color.Success,
-            "pending" => Color.Warning,
-            _ => Color.Default
+            "graded" => "badge-status-graded",
+            "pending" => "badge-status-pending",
+            _ => "badge-status-pending"
         };
     }
 

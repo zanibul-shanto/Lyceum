@@ -5,10 +5,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Lyceum.Services;
 
-public class LyceumDbContext(DbContextOptions<LyceumDbContext> options) : IdentityDbContext<User, IdentityRole<int>, int>(options)
+public class LyceumDbContext : IdentityDbContext<User, IdentityRole<int>, int>
 {
-    public DbSet<Course> Courses { get; set; } = default!;
-    public DbSet<CourseTeacher> CourseTeachers { get; set; } = default!;
+    public LyceumDbContext(DbContextOptions<LyceumDbContext> options) : base(options)
+    {
+    }
+
+    public DbSet<Course> Courses { get; set; }
+    public DbSet<CourseTeacher> CourseTeachers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
