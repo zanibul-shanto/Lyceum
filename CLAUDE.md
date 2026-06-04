@@ -1,257 +1,123 @@
-
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## Build & Run
 
-Lyceum is an ASP.NET Core Blazor-based educational management system for students, teachers, and administrators. It provides role-based dashboards, user management, and course/assignment tracking within a single integrated web application.
+```bash
+dotnet build
+dotnet run                              # https://localhost:7081
+dotnet ef migrations add <Name>         # add a migration
+dotnet ef database update               # apply manually (auto-runs on startup)
+```
+
+No test suite exists. Verify changes by running the app and exercising the affected page.
+
+Database auto-migrates and seeds on first startup via `DbInitializer.InitializeAsync()` called in `Program.cs`. To reset: drop `LyceumDb` in SQL Server and restart.
 
 ## Tech Stack
 
-- **Framework**: ASP.NET Core 10.0 with Blazor (Interactive Server Components)
-- **Language**: C# 12+ (with nullable reference types enabled)
-- **Database**: SQL Server with Entity Framework Core 10.0.8
-- **Authentication**: ASP.NET Core Identity + Custom Claims-based Auth State
-- **UI**: Razor components with Bootstrap 5, BlazorBootstrap component library, and custom CSS design system
-- **Build/Run**: `dotnet` CLI
+- ASP.NET Core 10 Blazor Server (Interactive Server render mode)
+- Entity Framework Core 10 + SQL Server
+- ASP.NET Core Identity (`IdentityUser<int>`, cookie auth, 7-day expiry)
+- **Radzen Blazor** for all UI components (`RadzenDataGrid`, `RadzenDropDown`, `RadzenButton`, `DialogService`, `NotificationService`, etc.)
+- Bootstrap 5 + Bootstrap Icons for layout and icons
+- QuestPDF for PDF generation, CsvHelper for bulk import
 
-## Build & Run Commands
+## Architecture
 
-### Prerequisites
-- .NET 10.0 SDK
-- SQL Server LocalDB (or SQL Express)
-- Visual Studio 2022+ or VS Code with C# extensions
+### Authentication
 
-### Build
-```bash
-dotnet build
+Login posts to `/api/auth/login` (a minimal API endpoint in `Program.cs`). `SignInManager.PasswordSignInAsync` sets the cookie. The auth state provider is `LyceumAuthStateProvider` which extends `RevalidatingServerAuthenticationStateProvider` (30-min revalidation, validates security stamp).
+
+**Critical:** Roles are stored as a custom `UserRole` enum on `User.Role`, not in `AspNetUserRoles`. `LyceumUserClaimsPrincipalFactory` overrides `GenerateClaimsAsync` to inject `ClaimTypes.Role` from `user.Role.ToString()` so the cookie carries the role claim. All pages gate access via `<AuthorizeView Roles="Admin|Teacher|Student">` and a redundant `OnAfterRenderAsync` redirect check.
+
+### User / Identity Model
+
+`User : IdentityUser<int>` adds `FullName`, `Role` (enum), `IsActive`, `CreatedAt`, `UpdatedAt`. `Username` is a `[NotMapped]` property that aliases `IdentityUser.UserName` — it is not a separate DB column.
+
+`Student` and `Teacher` are **separate model classes** with a 1:1 FK to `User` (`UserId`). They are created by `StudentService.CreateAsync` / `TeacherService.CreateAsync` immediately after `UserManager.CreateAsync`. Do not add student/teacher fields to `User`.
+
+### Data Model relationships
+
+```
+User ──1:1──► Student ──M:N──► Course  (via StudentEnrollment)
+User ──1:1──► Teacher ──M:N──► Course  (via CourseTeacher, composite PK)
+Course ──1:M──► Subject
+Course ──1:M──► AttendanceSession ──1:M──► AttendanceRecord
+Course ──1:M──► Grade
+Course ──1:M──► Timetable
 ```
 
-### Run (Development)
-```bash
-dotnet run
-```
-- Launches on `https://localhost:7081` (or `http://localhost:5058`)
-- Automatically applies database migrations and seeds test data on first startup
-- Browser auto-opens to the login page
-
-### Run (IIS Express)
-```bash
-dotnet run --launch-profile "IIS Express"
-```
-
-### Database
-- Connection string in `appsettings.json`: `Server=.\SQLEXPRESS;Database=LyceumDb;`
-- Migrations auto-apply on app startup via `DbInitializer.InitializeAsync()`
-- To manually migrate: `dotnet ef database update`
-- To add a new migration: `dotnet ef migrations add MigrationName`
-
-### Test Data
-On first run, the `DbInitializer` seeds 5 test accounts:
-- **Admin**: username `admin`, password `Admin@123`
-- **Teacher**: username `teacher`, password `Teacher@123`
-- **Student**: username `student`, password `Student@123`
-- Plus two additional users: `jdoe`, `msmith` (both with password `Student@123`)
-
-## Architecture & Key Patterns
-
-### Authentication Flow
-1. User logs in via `Login.razor` component
-2. `UserService.AuthenticateAsync()` verifies credentials against hashed passwords in database
-3. `CustomAuthStateProvider` stores username in `ProtectedLocalStorage` and creates a `ClaimsPrincipal` with claims:
-   - `ClaimTypes.NameIdentifier` (user ID)
-   - `ClaimTypes.Name` (username)
-   - `ClaimTypes.Email`
-   - `ClaimTypes.Role` (Student/Teacher/Admin enum as string)
-   - Custom `FullName` claim
-4. Razor components use `@attribute [Authorize(Roles="...")]` or `<AuthorizeView>` for access control
-5. Home page redirects authenticated users to their role-specific dashboard
-
-### User Model Architecture
-`User` extends `IdentityUser<int>` with:
-- **Common fields**: `FullName`, `Role` (enum), `CreatedAt`, `Email`, `Username`
-- **Student fields**: `StudentId` (auto-generated STU-YYYY-XXXX), `GradeLevel`, `GPA`, `AttendanceRate`
-- **Teacher fields**: `TeacherId` (auto-generated TCH-YYYY-XXX), `Department`, `Bio`, `OfficeRoom`
-
-The `UserRole` enum (Student=0, Teacher=1, Admin=2) drives role-based visibility and access throughout the UI.
-
-### Course Model
-`Course` fields: `Name`, `CourseCode` (unique, indexed), `Description`, `Schedule`, `RoomNo`, `Credits` (1–10), `MaxCapacity` (1–500), `IsActive`, `CreatedAt`, `UpdatedAt`.
-
-`CourseTeacher` is the many-to-many junction between `Course` and `User` (Teacher). Composite PK `(CourseId, TeacherId)`. When calling `CourseService.CreateAsync` / `UpdateAsync`, pass a `List<int>` of teacher User IDs — the service replaces junction rows on update.
-
-### Database & EF Core
-- `LyceumDbContext` extends `IdentityDbContext<User, IdentityRole<int>, int>`
-  - Inherits all Identity tables (AspNetUsers, AspNetRoles, AspNetUserRoles, etc.)
-  - Custom properties on User are stored in AspNetUsers table
-  - Extra DbSets: `Courses`, `CourseTeachers`; `CourseCode` has a unique index
-- Migrations are in `Migrations/` directory; first migration (`20260522132608_init.cs`) creates all Identity tables + custom User columns
-- `DbInitializer.InitializeAsync()` (called in `Program.cs`) ensures migrations run and seeds data if empty
-
-### Component Organization
-**Pages** (`Components/Pages/`):
-- **Public**: `Login.razor`, `Register.razor` (no auth required)
-- **Dashboard**: `Home.razor` (redirects to role-specific dashboard)
-- **Role-specific**: `Admin/AdminDashboard.razor`, `Admin/CourseManagement.razor`, `Teacher/TeacherDashboard.razor`, `Student/StudentDashboard.razor`
-- **Error**: `Error.razor`, `NotFound.razor`
-
-**Layout** (`Components/Layout/`):
-- `MainLayout.razor`: Two-column layout (sidebar + main content) with conditional auth page detection
-- `NavMenu.razor`: Role-based sidebar with three portal sections and dynamic menu links
-- `ReconnectModal.razor`: Handles Blazor reconnection scenarios
-
-**Imports**: `_Imports.razor` provides global namespaces (Lyceum.*, Microsoft.AspNetCore.*)
-
-### UI Design System
-Global CSS variables in `wwwroot/app.css`:
-- **Primary**: `--primary: #3182ce` (blue)
-- **Success**: `--success: #10b981` (green)
-- **Warning**: `--warning: #f59e0b` (amber)
-- **Danger**: `--danger: #ef4444` (red)
-- **Neutrals**: Slate shades from `--dark-navy` to `--light-bg`
-- **Fonts**: 'Outfit' (headings), 'Plus Jakarta Sans' (body)
-- **Shadows**: Premium, card, and hover variants
-
-Custom component classes:
-- `.auth-card-modern`: Login/register card styling
-- `.dashboard-card`: Stat cards with icon background
-- `.kpi-card`: KPI metric display (Enrolled Courses, Assignments, etc.)
-- `.header-profile-card`: User avatar + name in page header
+`CourseTeacher` uses composite PK `(CourseId, TeacherId)` — no surrogate key. `CourseService.UpdateAsync` replaces all junction rows atomically. Pass `List<int>` of **Teacher.Id** (not UserId) to `CreateAsync`/`UpdateAsync`.
 
 ### Service Layer
-**`UserService`** (dependency-injected via `builder.Services.AddScoped<UserService>()`)
-- `AuthenticateAsync(usernameOrEmail, password)`: Login validation
-- `RegisterAsync(user, password)`: Create account (auto-assigns StudentId or TeacherId if applicable)
-- `GetAllUsersAsync()`, `GetUsersByRoleAsync(role)`: User queries
-- `UpdateUserAsync(user)`, `DeleteUserAsync(id)`: User management
 
-**`CustomAuthStateProvider`** (Scoped)
-- `GetAuthenticationStateAsync()`: Restores auth state from protected storage
-- `MarkUserAsAuthenticated(user)`: Login callback
-- `MarkUserAsLoggedOut()`: Logout callback
+All services are scoped (`AddScoped`) and injected via constructor (primary constructor syntax). `LyceumDbContext` is also scoped — pages may inject it directly when bypassing a service method (e.g. `ManualAttendance.razor`), which works safely because all share the same request scope.
 
-**`CourseService`** (Scoped)
-- `GetAllAsync()`, `GetByIdAsync(id)`: Course queries (includes `CourseTeachers → Teacher`)
-- `CreateAsync(course, teacherIds)`: Enforces unique `CourseCode`; creates junction rows
-- `UpdateAsync(course, teacherIds)`: Replaces all junction rows atomically
-- `DeleteAsync(id)`, `ToggleActiveAsync(id)`: Course management
+Key services and their responsibilities:
 
-**`LyceumDbContext`** (Scoped)
-- Standard EF Core DbContext for database access
+| Service | Responsibility |
+|---------|---------------|
+| `StudentService` | Student CRUD; calls `UserManager` for user creation/deletion |
+| `TeacherService` | Teacher CRUD; same pattern |
+| `CourseService` | Course CRUD + teacher assignment via `CourseTeacher` junction |
+| `EnrollmentService` | Enroll / drop students per course |
+| `AttendanceService` | Sessions + records; `MarkAttendanceAsync` deletes then re-inserts all records for a session |
+| `GradeService` | Grade entry (upsert); `ComputeGrade` applies 30/30/40 weighting |
+| `TimetableService` | Schedule CRUD; `CheckConflictAsync` prevents teacher double-booking |
+| `ReportService` | PDF generation via QuestPDF |
+| `AuditLogService` | Append-only audit trail |
+| `SystemSettingService` | Key-value config store (AcademicYear, CurrentSemester, GradingScale) |
+| `CsvImportService` | Bulk student creation from CSV stream |
 
-### Routing
-Routes defined in `Routes.razor`:
-- `<Router>` with `<CascadingAuthenticationState>` wraps all pages
-- `<AuthorizeRouteView>` protects routes based on role claims
-- `NotFound` component shown for missing routes
-- Login/register pages skip auth check via `MainLayout` detection
+### Pages & Dialogs
 
-## Common Development Tasks
+Pages live under `Components/Pages/{Admin,Teacher,Student}/`. Dialogs (modal forms) are separate `.razor` files in the same folder, opened via `DialogService.OpenAsync<TComponent>()` and closed with `DialogService.Close(result)`.
 
-### Adding a New User Role
-1. Add enum value to `UserRole` in `Models/User.cs`
-2. Add role-specific fields to `User` class if needed
-3. Create migration: `dotnet ef migrations add AddRoleToUser`
-4. Create new dashboard page: `Components/Pages/{RoleName}/{RoleName}Dashboard.razor`
-5. Add `<AuthorizeView Roles="RoleName">` block in new page
-6. Add sidebar menu section in `NavMenu.razor` with new role's nav links
-7. Update `Home.razor` redirect logic to handle new role
+Admin dialogs: `StudentDialog`, `TeacherDialog`, `CourseDialog`, `EnrollmentDialog`, `TimetableDialog`, `SubjectDialog`, `UserDialog`.  
+Teacher dialogs: `GradeDialog`.
 
-### Adding a New Page/Feature
-1. Create `.razor` file in `Components/Pages/` or subdirectory
-2. Add `@page "/route"` directive
-3. Wrap content in `<AuthorizeView Roles="RoleList">` if role-restricted
-4. Inject required services: `@inject UserService`, `@inject NavigationManager`, etc.
-5. Add sidebar link in `NavMenu.razor` for authenticated users
-6. Use existing CSS classes (dashboard-card, kpi-card, btn-primary-custom) for consistency
+### PDF Download
 
-### Extending User Model
-1. Add property to `User` class in `Models/User.cs` with appropriate data type and validation attributes
-2. Create migration: `dotnet ef migrations add DescriptiveReason`
-3. Run `dotnet run` to apply migration
-4. Update `RegisterAsync()` and `UpdateUserAsync()` in `UserService` if field should be set during registration/editing
+`window.downloadFileFromBytes(filename, base64)` is defined inline in `Components/App.razor`. All PDF download calls must use:
+```csharp
+await JSRuntime.InvokeVoidAsync("downloadFileFromBytes", filename, base64);
+```
 
-### Modifying Authentication/Authorization
-- Auth state provider: `Services/CustomAuthStateProvider.cs`
-- User credential validation: `Services/UserService.AuthenticateAsync()`
-- Claims creation: `CustomAuthStateProvider.CreateIdentity()` (update if adding custom claims)
-- Role checks: Update role names in `@attribute [Authorize(Roles="...")]` or component role conditions
+### CSS
 
-## File Locations Reference
+Global design tokens and component classes are in `wwwroot/app.css`. Reuse existing classes:
+- `.dashboard-card` — card with shadow
+- `.kpi-card` / `.kpi-number` / `.kpi-label` — stat widgets
+- `.premium-page-header` — page title bar (Student/Teacher portals)
+- `.badge-role`, `.badge-admin`, `.badge-teacher`, `.badge-student` — role pills
+- `.page-title-modern`, `.page-subtitle-modern` — heading styles
+- `.form-control-custom` — styled form inputs
 
-| Purpose | Location |
-|---------|----------|
-| Entry point | `Program.cs` |
-| User model | `Models/User.cs` |
-| Auth provider | `Services/CustomAuthStateProvider.cs` |
-| User CRUD/auth | `Services/UserService.cs` |
-| Database context | `Services/LyceumDbContext.cs` |
-| DB init & seeds | `Services/DbInitializer.cs` |
-| Global styles | `wwwroot/app.css` |
-| Config (dev) | `appsettings.json` / `appsettings.Development.json` |
-| Launch profiles | `Properties/launchSettings.json` |
-| Database migrations | `Migrations/` |
-| Admin dashboard | `Components/Pages/Admin/AdminDashboard.razor` |
-| Course management (Admin) | `Components/Pages/Admin/CourseManagement.razor` |
-| Teacher dashboard | `Components/Pages/Teacher/TeacherDashboard.razor` |
-| Student dashboard | `Components/Pages/Student/StudentDashboard.razor` |
-| Course model | `Models/Course.cs` (includes `CourseTeacher` junction) |
-| Course CRUD | `Services/CourseService.cs` |
-| Sidebar nav | `Components/Layout/NavMenu.razor` |
-| Main layout | `Components/Layout/MainLayout.razor` |
+## Key Files
 
-## Notes for Future Work
+| Purpose | Path |
+|---------|------|
+| App entry point + auth endpoints | `Program.cs` |
+| Role claim injection | `Services/LyceumUserClaimsPrincipalFactory.cs` |
+| Auth state provider | `Services/LyceumAuthStateProvider.cs` |
+| EF DbContext + model config | `Services/LyceumDbContext.cs` |
+| Seed data | `Services/DbInitializer.cs` |
+| HTML shell + JS helpers | `Components/App.razor` |
+| Global Razor imports | `Components/_Imports.razor` |
+| Sidebar navigation | `Components/Layout/NavMenu.razor` |
 
-- **ProtectedLocalStorage** usage: Auth state relies on browser protected storage, which throws exceptions during pre-rendering. The `CustomAuthStateProvider` catches these safely.
-- **Password policy**: Currently permissive (6+ chars, no complexity requirements). Update `Program.cs` password options for production.
-- **Database migrations**: Migrations auto-apply on startup. Keep `DbInitializer` updated when adding features that require seeding.
-- **Role-based redirects**: Home page routes authenticated users to their dashboard; update the switch statement if adding roles.
-- **Accessibility**: Components use semantic HTML and Bootstrap Icon `<i>` tags; ensure alt text or ARIA labels when adding new icons.
+## Behavioral Guidelines
 
-## Behavioral Guidelines (Andrej Karpathy Skills)
+### Think Before Coding
+State assumptions explicitly. Ask when ambiguous rather than guessing. Push back when a simpler approach exists.
 
-Derived from [Andrej Karpathy's observations](https://x.com/karpathy/status/2015883857489522876) on LLM coding pitfalls.
+### Simplicity First
+Minimum code that solves the problem. No abstractions for single-use code, no error handling for impossible scenarios.
 
-### 1. Think Before Coding
+### Surgical Changes
+Touch only what the task requires. Match existing style. Mention unrelated dead code rather than deleting it.
 
-Don't assume. Don't hide confusion. Surface tradeoffs.
-
-- State assumptions explicitly — if uncertain, ask rather than guess
-- Present multiple interpretations — don't pick silently when ambiguity exists
-- Push back when a simpler approach exists
-- Stop when confused — name what's unclear and ask for clarification
-
-### 2. Simplicity First
-
-Minimum code that solves the problem. Nothing speculative.
-
-- No features beyond what was asked
-- No abstractions for single-use code
-- No error handling for impossible scenarios
-- If 200 lines could be 50, rewrite it
-
-**Test:** Would a senior engineer say this is overcomplicated? If yes, simplify.
-
-### 3. Surgical Changes
-
-Touch only what you must. Clean up only your own mess.
-
-- Don't "improve" adjacent code, comments, or formatting
-- Match existing style, even if you'd do it differently
-- If you notice unrelated dead code, mention it — don't delete it
-- Remove imports/variables/functions that *your* changes made unused; leave pre-existing dead code alone
-
-**Test:** Every changed line should trace directly to the user's request.
-
-### 4. Goal-Driven Execution
-
-Define success criteria. Loop until verified.
-
-Transform tasks into verifiable goals — write a test that reproduces a bug, then make it pass; ensure tests pass before and after a refactor. For multi-step tasks, state a brief plan with a verification check per step.
-
-**Key insight:** LLMs loop well against specific goals. Weak criteria ("make it work") require constant clarification; strong criteria let the LLM loop independently.
-
-### Tradeoff Note
-
-These guidelines bias toward caution over speed. For trivial tasks (simple typo fixes, obvious one-liners), use judgment — not every change needs full rigor. The goal is reducing costly mistakes on non-trivial work.
+### Goal-Driven Execution
+Define a verifiable success condition before making changes. For bugs, identify the exact failing path first.
