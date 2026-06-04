@@ -1,4 +1,8 @@
-@inject UserService UserService
+@inject StudentService StudentService
+@inject CourseService CourseService
+@inject GradeService GradeService
+@inject TeacherService TeacherService
+@inject AuthenticationStateProvider AuthStateProvider
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 
@@ -7,60 +11,161 @@
         <div class="stat-icon bg-primary-subtle text-primary mx-auto mb-2 grade-dialog-icon">
             <i class="bi bi-journal-check"></i>
         </div>
-        <h5 class="fw-bold mb-1 text-dark">@Student.FullName</h5>
-        <p class="text-secondary small mb-0">ID: @Student.StudentId</p>
+        <h5 class="fw-bold mb-1 text-dark">@student?.User?.FullName</h5>
+        <p class="text-secondary small mb-1">Student Code: @student?.StudentCode</p>
+        <span class="badge bg-secondary text-white">@course?.Name</span>
     </div>
 
-    <EditForm Model="this" OnValidSubmit="SaveGrade" FormName="GradeDialogForm">
-        <div class="mb-3">
-            <label class="form-label fw-semibold small text-secondary">GPA (0.00 – 4.00)</label>
-            <div class="input-group">
-                <span class="input-group-text bg-light text-secondary font-monospace">
-                    <i class="bi bi-star"></i>
-                </span>
-                <input type="number" step="0.01" min="0" max="4" @bind="tempGpa"
-                       class="form-control form-control-custom font-monospace" placeholder="e.g. 3.50" required />
+    @if (loading)
+    {
+        <div class="d-flex justify-content-center my-4">
+            <RadzenProgressBarCircular Value="100" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
+        </div>
+    }
+    else
+    {
+        <EditForm Model="this" OnValidSubmit="SaveGrade" FormName="GradeDialogForm">
+            <div class="mb-3">
+                <label class="form-label fw-semibold small text-secondary">Assignment Marks (30% weight, 0–100)</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light text-secondary font-monospace">
+                        <i class="bi bi-pencil"></i>
+                    </span>
+                    <input type="number" step="0.1" min="0" max="100" @bind="assignmentMarks" @bind:event="oninput"
+                           class="form-control form-control-custom font-monospace" placeholder="e.g. 85.0" required />
+                </div>
             </div>
-        </div>
 
-        <div class="mb-4">
-            <label class="form-label fw-semibold small text-secondary">Attendance Rate (%)</label>
-            <div class="input-group">
-                <span class="input-group-text bg-light text-secondary font-monospace">
-                    <i class="bi bi-percent"></i>
-                </span>
-                <input type="number" step="0.1" min="0" max="100" @bind="tempAttendance"
-                       class="form-control form-control-custom font-monospace" placeholder="e.g. 95.0" required />
+            <div class="mb-3">
+                <label class="form-label fw-semibold small text-secondary">Midterm Marks (30% weight, 0–100)</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light text-secondary font-monospace">
+                        <i class="bi bi-book"></i>
+                    </span>
+                    <input type="number" step="0.1" min="0" max="100" @bind="midtermMarks" @bind:event="oninput"
+                           class="form-control form-control-custom font-monospace" placeholder="e.g. 78.5" required />
+                </div>
             </div>
-        </div>
 
-        <div class="d-flex justify-content-end gap-2 mt-4">
-            <RadzenButton Text="Cancel" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
-            <RadzenButton ButtonType="ButtonType.Submit" Text="Apply Grades" Icon="check_circle" ButtonStyle="ButtonStyle.Primary" />
-        </div>
-    </EditForm>
+            <div class="mb-3">
+                <label class="form-label fw-semibold small text-secondary">Final Exam Marks (40% weight, 0–100)</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light text-secondary font-monospace">
+                        <i class="bi bi-check2-square"></i>
+                    </span>
+                    <input type="number" step="0.1" min="0" max="100" @bind="finalMarks" @bind:event="oninput"
+                           class="form-control form-control-custom font-monospace" placeholder="e.g. 92.0" required />
+                </div>
+            </div>
+
+            <!-- Auto-computed live display -->
+            <div class="p-3 mb-4 rounded bg-light border d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="small text-secondary fw-semibold">Computed Total</span>
+                    <div class="fw-bold fs-4 text-dark font-monospace">@ComputedTotal.ToString("0.0")</div>
+                </div>
+                <div class="text-end">
+                    <span class="small text-secondary fw-semibold">Letter Grade</span>
+                    <div>
+                        <span class="badge bg-success fs-5 px-3 py-1 font-monospace">@ComputedLetter</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <RadzenButton Text="Cancel" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
+                <RadzenButton ButtonType="ButtonType.Submit" Text="Apply Grades" Icon="check_circle" ButtonStyle="ButtonStyle.Primary" />
+            </div>
+        </EditForm>
+    }
 </div>
 
 @code {
-    [Parameter] public User Student { get; set; } = new();
+    [Parameter] public int StudentId { get; set; }
+    [Parameter] public int CourseId { get; set; }
 
-    private double tempGpa;
-    private double tempAttendance;
+    private Student? student;
+    private Course? course;
+    private bool loading = true;
 
-    protected override void OnInitialized()
+    private double assignmentMarks;
+    private double midtermMarks;
+    private double finalMarks;
+    private int teacherId;
+
+    private double ComputedTotal => Math.Round((assignmentMarks * 0.3) + (midtermMarks * 0.3) + (finalMarks * 0.4), 1);
+
+    private string ComputedLetter => ComputedTotal switch
     {
-        tempGpa = Student.GPA ?? 0.0;
-        tempAttendance = Student.AttendanceRate ?? 100.0;
+        >= 90 => "A",
+        >= 80 => "B",
+        >= 70 => "C",
+        >= 60 => "D",
+        _ => "F"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        try
+        {
+            student = await StudentService.GetByIdAsync(StudentId);
+            course = await CourseService.GetByIdAsync(CourseId);
+
+            // Fetch logged-in teacher details
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var username = authState.User.Identity?.Name;
+            if (!string.IsNullOrEmpty(username))
+            {
+                var userIdClaim = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+                {
+                    var teacher = await TeacherService.GetByUserIdAsync(userId);
+                    teacherId = teacher?.Id ?? 0;
+                }
+            }
+
+            // Load existing grade if available
+            var existingGrade = await GradeService.GetAsync(StudentId, CourseId);
+            if (existingGrade != null)
+            {
+                assignmentMarks = existingGrade.AssignmentMarks;
+                midtermMarks = existingGrade.MidtermMarks;
+                finalMarks = existingGrade.FinalMarks;
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Failed to load dialog details: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
     }
 
     private async Task SaveGrade()
     {
+        if (teacherId == 0)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", "Teacher profile not found.");
+            return;
+        }
+
         try
         {
-            Student.GPA = Math.Max(0.0, Math.Min(4.0, tempGpa));
-            Student.AttendanceRate = Math.Max(0.0, Math.Min(100.0, tempAttendance));
-            await UserService.UpdateUserAsync(Student);
-            
+            var grade = new Grade
+            {
+                StudentId = StudentId,
+                CourseId = CourseId,
+                TeacherId = teacherId,
+                AssignmentMarks = Math.Max(0.0, Math.Min(100.0, assignmentMarks)),
+                MidtermMarks = Math.Max(0.0, Math.Min(100.0, midtermMarks)),
+                FinalMarks = Math.Max(0.0, Math.Min(100.0, finalMarks))
+            };
+
+            await GradeService.EnterGradeAsync(grade);
+
             DialogService.Close(true);
             NotificationService.Notify(NotificationSeverity.Success, "Success", "Grades applied successfully.");
         }

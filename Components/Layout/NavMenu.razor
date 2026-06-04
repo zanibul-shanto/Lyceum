@@ -1,4 +1,3 @@
-@inject CustomAuthStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 
 <AuthorizeView>
@@ -9,10 +8,9 @@
             <RadzenPanelMenu>
                 <RadzenPanelMenuItem Text="Dashboard" Icon="grid_view" Path="/student/dashboard" />
                 <RadzenPanelMenuItem Text="My Courses" Icon="book" Path="/student/courses" />
-                <RadzenPanelMenuItem Text="Assignments" Icon="assignment" Path="/student/assignments" />
+                <RadzenPanelMenuItem Text="Attendance" Icon="fact_check" Path="/student/attendance" />
                 <RadzenPanelMenuItem Text="Grades" Icon="bar_chart" Path="/student/grades" />
                 <RadzenPanelMenuItem Text="Schedule" Icon="calendar_month" Path="/student/schedule" />
-                <RadzenPanelMenuItem Text="Messages" Icon="chat" Path="/student/messages" />
             </RadzenPanelMenu>
         </AuthorizeView>
 
@@ -21,9 +19,11 @@
             <div class="sidebar-section-label">Teacher Portal</div>
             <RadzenPanelMenu>
                 <RadzenPanelMenuItem Text="Dashboard" Icon="grid_view" Path="/teacher/dashboard" />
-                <RadzenPanelMenuItem Text="Student Roster" Icon="people" Path="/teacher/classes" />
-                <RadzenPanelMenuItem Text="Evaluations" Icon="grading" Path="/teacher/evaluations" />
+                <RadzenPanelMenuItem Text="My Courses" Icon="book" Path="/teacher/courses" />
+                <RadzenPanelMenuItem Text="Attendance" Icon="fact_check" Path="/teacher/attendance" />
+                <RadzenPanelMenuItem Text="Grades" Icon="grading" Path="/teacher/grades" />
                 <RadzenPanelMenuItem Text="Schedule" Icon="calendar_month" Path="/teacher/schedule" />
+                <RadzenPanelMenuItem Text="Reports" Icon="analytics" Path="/teacher/reports" />
             </RadzenPanelMenu>
         </AuthorizeView>
 
@@ -31,10 +31,13 @@
         <AuthorizeView Roles="Admin" Context="adminCtx">
             <div class="sidebar-section-label">Admin Portal</div>
             <RadzenPanelMenu>
-                <RadzenPanelMenuItem Text="Dashboard" Icon="shield" Path="/admin/dashboard" />
-                <RadzenPanelMenuItem Text="Manage Directory" Icon="manage_accounts" Path="/admin/users" />
-                <RadzenPanelMenuItem Text="Course Management" Icon="library_books" Path="/admin/courses" />
-                <RadzenPanelMenuItem Text="System Settings" Icon="settings" Path="/admin/settings" />
+                <RadzenPanelMenuItem Text="Dashboard" Icon="dashboard" Path="/admin/dashboard" />
+                <RadzenPanelMenuItem Text="Students" Icon="school" Path="/admin/students" />
+                <RadzenPanelMenuItem Text="Teachers" Icon="person" Path="/admin/teachers" />
+                <RadzenPanelMenuItem Text="Courses" Icon="library_books" Path="/admin/courses" />
+                <RadzenPanelMenuItem Text="Timetable" Icon="calendar_today" Path="/admin/timetable" />
+                <RadzenPanelMenuItem Text="Audit Logs" Icon="history" Path="/admin/audit-logs" />
+                <RadzenPanelMenuItem Text="Settings" Icon="settings" Path="/admin/settings" />
             </RadzenPanelMenu>
         </AuthorizeView>
     </Authorized>
@@ -52,9 +55,8 @@
 </AuthorizeView>
 
 @code {
-    private async Task Logout()
+    private void Logout()
     {
-        await AuthStateProvider.MarkUserAsLoggedOut();
-        Navigation.NavigateTo("/login");
+        Navigation.NavigateTo("/api/auth/logout", forceLoad: true);
     }
 }

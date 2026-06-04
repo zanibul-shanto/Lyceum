@@ -1,0 +1,375 @@
+@page "/teacher/attendance"
+@inject TeacherService TeacherService
+@inject EnrollmentService EnrollmentService
+@inject AttendanceService AttendanceService
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject NotificationService NotificationService
+@inject global::Lyceum.Services.LyceumDbContext DbContext
+
+<PageTitle>Manual Attendance - Lyceum</PageTitle>
+
+<AuthorizeView Roles="Teacher">
+    <Authorized>
+        <div class="container-fluid py-4 px-xl-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1 page-title-modern text-white">Manual Attendance</h3>
+                    <p class="page-subtitle-modern mb-0 text-secondary">Record daily class attendance and manage previous sessions.</p>
+                </div>
+            </div>
+
+            <!-- Course Selection & Settings Card -->
+            <div class="dashboard-card p-4 mb-4">
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-md-4">
+                        <label class="form-label text-secondary fw-semibold small">Select Course</label>
+                        <RadzenDropDown TValue="int?" Value="@selectedCourseId" Data="@assignedCourses" 
+                                        TextProperty="Name" ValueProperty="Id" 
+                                        Change="@(args => OnCourseChanged((int?)args))" 
+                                        Placeholder="Choose a course..." class="w-100" />
+                    </div>
+
+                    @if (selectedCourseId.HasValue)
+                    {
+                        <div class="col-12 col-md-3">
+                            <label class="form-label text-secondary fw-semibold small">Session Date</label>
+                            <RadzenDatePicker TValue="DateTime" @bind-Value="selectedDate" DateFormat="yyyy-MM-dd" class="w-100" />
+                        </div>
+                        <div class="col-6 col-md-2.5">
+                            <label class="form-label text-secondary fw-semibold small">Start Time</label>
+                            <RadzenDatePicker TValue="DateTime?" @bind-Value="startTime" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" class="w-100" />
+                        </div>
+                        <div class="col-6 col-md-2.5">
+                            <label class="form-label text-secondary fw-semibold small">End Time</label>
+                            <RadzenDatePicker TValue="DateTime?" @bind-Value="endTime" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" class="w-100" />
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (selectedCourseId.HasValue)
+            {
+                <div class="row g-4">
+                    <!-- Roster Column -->
+                    <div class="col-12 col-lg-8">
+                        <div class="dashboard-card p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="fw-bold mb-0 text-dark">
+                                        @if (editingSessionId.HasValue)
+                                        {
+                                            <span><i class="bi bi-pencil-square text-warning me-2"></i>Editing Attendance Session</span>
+                                        }
+                                        else
+                                        {
+                                            <span><i class="bi bi-people-fill text-primary me-2"></i>Student Roster</span>
+                                        }
+                                    </h5>
+                                    <p class="text-secondary small mb-0 mt-1">Mark attendance for each student below.</p>
+                                </div>
+                                <div>
+                                    @if (editingSessionId.HasValue)
+                                    {
+                                        <RadzenButton Text="Cancel Edit" Click="CancelEdit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" class="me-2" />
+                                    }
+                                    <RadzenButton Text="Save Attendance" Icon="save" Click="SaveAttendance" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Medium" />
+                                </div>
+                            </div>
+
+                            @if (!studentsRoster.Any())
+                            {
+                                <div class="alert alert-warning py-3 mb-0 border-0">
+                                    No students are currently enrolled in this course.
+                                </div>
+                            }
+                            else
+                            {
+                                <RadzenDataGrid Data="@studentsRoster" TItem="Student" AllowPaging="true" PageSize="15" GridLines="DataGridGridLines.Horizontal">
+                                    <Columns>
+                                        <RadzenDataGridColumn TItem="Student" Title="Student" Sortable="false">
+                                            <Template Context="student">
+                                                <div class="fw-semibold text-dark">@student.User?.FullName</div>
+                                                <div class="text-secondary small">Code: @student.StudentCode</div>
+                                            </Template>
+                                        </RadzenDataGridColumn>
+                                        <RadzenDataGridColumn TItem="Student" Title="Attendance Status" TextAlign="TextAlign.Center" Width="280px" Sortable="false">
+                                            <Template Context="student">
+                                                <RadzenRadioButtonList @bind-Value="studentStatuses[student.Id]" TValue="AttendanceStatus" class="d-inline-flex">
+                                                    <Items>
+                                                        <RadzenRadioButtonListItem Text="Present" Value="AttendanceStatus.Present" ButtonStyle="ButtonStyle.Success" />
+                                                        <RadzenRadioButtonListItem Text="Absent" Value="AttendanceStatus.Absent" ButtonStyle="ButtonStyle.Danger" />
+                                                        <RadzenRadioButtonListItem Text="Late" Value="AttendanceStatus.Late" ButtonStyle="ButtonStyle.Warning" />
+                                                    </Items>
+                                                </RadzenRadioButtonList>
+                                            </Template>
+                                        </RadzenDataGridColumn>
+                                    </Columns>
+                                </RadzenDataGrid>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- History Column -->
+                    <div class="col-12 col-lg-4">
+                        <div class="dashboard-card p-4">
+                            <h5 class="fw-bold mb-3 text-dark">
+                                <i class="bi bi-clock-history text-info me-2"></i>Session History
+                            </h5>
+                            @if (!previousSessions.Any())
+                            {
+                                <p class="text-secondary small mb-0">No attendance sessions recorded yet.</p>
+                            }
+                            else
+                            {
+                                <div class="list-group list-group-flush" style="max-height: 500px; overflow-y: auto;">
+                                    @foreach (var session in previousSessions)
+                                    {
+                                        <div class="list-group-item px-0 py-3 bg-transparent border-bottom">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <div class="fw-semibold text-dark">@session.SessionDate.ToString("yyyy-MM-dd")</div>
+                                                    <div class="text-secondary small">
+                                                        <i class="bi bi-clock me-1"></i>
+                                                        @(session.StartTime.HasValue && session.EndTime.HasValue 
+                                                            ? $"{session.StartTime.Value.ToString("hh:mm tt")} - {session.EndTime.Value.ToString("hh:mm tt")}" 
+                                                            : "No Time Logged")
+                                                    </div>
+                                                    <div class="mt-1">
+                                                        <span class="badge bg-success-subtle text-success small me-1">
+                                                            P: @session.Records.Count(r => r.Status == AttendanceStatus.Present)
+                                                        </span>
+                                                        <span class="badge bg-danger-subtle text-danger small me-1">
+                                                            A: @session.Records.Count(r => r.Status == AttendanceStatus.Absent)
+                                                        </span>
+                                                        <span class="badge bg-warning-subtle text-warning small">
+                                                            L: @session.Records.Count(r => r.Status == AttendanceStatus.Late)
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex gap-1">
+                                                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.ExtraSmall" Click="@(() => LoadSessionForEdit(session))" />
+                                                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall" Click="@(() => ConfirmDeleteSession(session.Id))" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info py-3 border-0 shadow-sm">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    Please select a course to record or review attendance.
+                </div>
+            }
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="d-flex flex-column align-items-center justify-content-center portal-loading-container">
+            <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Large" />
+            <p class="mt-3 text-secondary fw-semibold">Loading Portal...</p>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private Teacher? currentTeacher;
+    private List<Course> assignedCourses = new();
+    private int? selectedCourseId;
+    
+    private DateTime selectedDate = DateTime.Today;
+    private DateTime? startTime = DateTime.Today.AddHours(9);
+    private DateTime? endTime = DateTime.Today.AddHours(10);
+
+    private List<Student> studentsRoster = new();
+    private Dictionary<int, AttendanceStatus> studentStatuses = new();
+    private List<AttendanceSession> previousSessions = new();
+    
+    private int? editingSessionId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var userIdStr = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(userIdStr, out int userId))
+            {
+                currentTeacher = await TeacherService.GetByUserIdAsync(userId);
+                if (currentTeacher != null)
+                {
+                    assignedCourses = currentTeacher.CourseTeachers.Select(ct => ct.Course).ToList();
+                }
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated != true ||
+                authState.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value != "Teacher")
+            {
+                Navigation.NavigateTo("/login");
+            }
+        }
+    }
+
+    private async Task OnCourseChanged(int? courseId)
+    {
+        selectedCourseId = courseId;
+        CancelEdit();
+        
+        if (selectedCourseId.HasValue)
+        {
+            await LoadRosterAsync();
+            await LoadSessionsHistoryAsync();
+        }
+        else
+        {
+            studentsRoster.Clear();
+            studentStatuses.Clear();
+            previousSessions.Clear();
+        }
+    }
+
+    private async Task LoadRosterAsync()
+    {
+        if (!selectedCourseId.HasValue) return;
+
+        var enrollments = await EnrollmentService.GetByCourseAsync(selectedCourseId.Value);
+        studentsRoster = enrollments
+            .Where(e => e.Status == EnrollmentStatus.Active)
+            .Select(e => e.Student)
+            .ToList();
+
+        // Default everyone to Present
+        studentStatuses = studentsRoster.ToDictionary(s => s.Id, s => AttendanceStatus.Present);
+    }
+
+    private async Task LoadSessionsHistoryAsync()
+    {
+        if (!selectedCourseId.HasValue) return;
+        previousSessions = await AttendanceService.GetSessionsByCourseAsync(selectedCourseId.Value);
+    }
+
+    private async Task LoadSessionForEdit(AttendanceSession session)
+    {
+        editingSessionId = session.Id;
+        selectedDate = session.SessionDate;
+        
+        startTime = session.StartTime.HasValue ? DateTime.Today.Add(session.StartTime.Value.ToTimeSpan()) : null;
+        endTime = session.EndTime.HasValue ? DateTime.Today.Add(session.EndTime.Value.ToTimeSpan()) : null;
+
+        // Fetch full session details including records
+        var fullSession = await AttendanceService.GetSessionAsync(session.Id);
+        if (fullSession != null)
+        {
+            // Populate statuses based on database records
+            foreach (var record in fullSession.Records)
+            {
+                studentStatuses[record.StudentId] = record.Status;
+            }
+
+            // Ensure any student in the roster who was not marked is defaulted to Present
+            foreach (var student in studentsRoster)
+            {
+                if (!studentStatuses.ContainsKey(student.Id))
+                {
+                    studentStatuses[student.Id] = AttendanceStatus.Present;
+                }
+            }
+        }
+
+        NotificationService.Notify(NotificationSeverity.Info, "Edit Mode", $"Editing attendance session from {session.SessionDate:yyyy-MM-dd}.");
+    }
+
+    private void CancelEdit()
+    {
+        editingSessionId = null;
+        selectedDate = DateTime.Today;
+        startTime = DateTime.Today.AddHours(9);
+        endTime = DateTime.Today.AddHours(10);
+        
+        // Reset Roster statuses to Present
+        foreach (var key in studentStatuses.Keys)
+        {
+            studentStatuses[key] = AttendanceStatus.Present;
+        }
+    }
+
+    private async Task SaveAttendance()
+    {
+        if (!selectedCourseId.HasValue || currentTeacher == null) return;
+
+        try
+        {
+            TimeOnly? start = startTime.HasValue ? TimeOnly.FromDateTime(startTime.Value) : null;
+            TimeOnly? end = endTime.HasValue ? TimeOnly.FromDateTime(endTime.Value) : null;
+
+            int sessionId;
+
+            if (editingSessionId.HasValue)
+            {
+                sessionId = editingSessionId.Value;
+                // Update Session details directly
+                var session = await DbContext.AttendanceSessions.FindAsync(sessionId);
+                if (session != null)
+                {
+                    session.SessionDate = selectedDate;
+                    session.StartTime = start;
+                    session.EndTime = end;
+                    await DbContext.SaveChangesAsync();
+                }
+            }
+            else
+            {
+                // Create a new session
+                var session = await AttendanceService.CreateSessionAsync(selectedCourseId.Value, currentTeacher.Id, selectedDate, start, end);
+                sessionId = session.Id;
+            }
+
+            // Map studentStatuses to expected list structure
+            var recordsToSave = studentStatuses.Select(kvp => (StudentId: kvp.Key, Status: kvp.Value)).ToList();
+            await AttendanceService.MarkAttendanceAsync(sessionId, recordsToSave);
+
+            NotificationService.Notify(NotificationSeverity.Success, "Success", "Attendance saved successfully.");
+            
+            CancelEdit();
+            await LoadSessionsHistoryAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Could not save attendance: {ex.Message}");
+        }
+    }
+
+    private async Task ConfirmDeleteSession(int sessionId)
+    {
+        try
+        {
+            await AttendanceService.DeleteSessionAsync(sessionId);
+            NotificationService.Notify(NotificationSeverity.Success, "Deleted", "Attendance session removed.");
+            
+            if (editingSessionId == sessionId)
+            {
+                CancelEdit();
+            }
+            
+            await LoadSessionsHistoryAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Could not delete session: {ex.Message}");
+        }
+    }
+}

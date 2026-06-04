@@ -1,6 +1,12 @@
 @page "/teacher/dashboard"
 @inject UserService UserService
-@inject CustomAuthStateProvider AuthStateProvider
+@inject TeacherService TeacherService
+@inject CourseService CourseService
+@inject StudentService StudentService
+@inject GradeService GradeService
+@inject AttendanceService AttendanceService
+@inject TimetableService TimetableService
+@inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 @inject DialogService DialogService
 
@@ -17,9 +23,9 @@
                     </div>
                     <div>
                         <span class="badge fw-bold text-uppercase small teacher-badge">Teacher Profile</span>
-                        <h2 class="fw-bold mb-0 text-white mt-1">@currentTeacher?.FullName</h2>
+                        <h2 class="fw-bold mb-0 text-white mt-1">@currentTeacher?.User?.FullName</h2>
                         <p class="mb-0 small teacher-subtitle">
-                            @currentTeacher?.Department | ID: @currentTeacher?.TeacherId
+                            @(currentTeacher?.Department ?? "No Department Assigned") | ID: @currentTeacher?.TeacherCode
                         </p>
                     </div>
                 </div>
@@ -49,9 +55,9 @@
                 <div class="col-12 col-lg-4">
                     <div class="dashboard-card h-100 p-4">
                         <h5 class="fw-bold text-dark mb-3">
-                            <i class="bi bi-bar-chart-line text-success me-2"></i> GPA Distribution
+                            <i class="bi bi-bar-chart-line text-success me-2"></i> Enrolled Students GPA
                         </h5>
-                        @if (gpaChartData.Any())
+                        @if (gpaChartData.Any(c => c.Count > 0))
                         {
                             <RadzenChart class="teacher-gpa-chart">
                                 <RadzenColumnSeries Data="@gpaChartData" CategoryProperty="Range" ValueProperty="Count" Title="Students" />
@@ -70,24 +76,24 @@
                     <div class="row g-3 h-100">
                         <div class="col-6">
                             <div class="dashboard-card p-3 h-100 d-flex flex-column justify-content-center">
-                                <span class="kpi-label">Students</span>
-                                <div class="kpi-number">@students.Count</div>
+                                <span class="kpi-label">Assigned Courses</span>
+                                <div class="kpi-number">@assignedCourses.Count</div>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="dashboard-card p-3 h-100 d-flex flex-column justify-content-center">
-                                <span class="kpi-label">Avg GPA</span>
-                                <div class="kpi-number">@averageGpa.ToString("0.00")</div>
+                                <span class="kpi-label">Enrolled Students</span>
+                                <div class="kpi-number">@totalEnrolledStudents</div>
                             </div>
                         </div>
                         <div class="col-12">
                             <div class="dashboard-card p-3 d-flex align-items-center gap-3">
-                                <div class="stat-icon bg-warning-subtle text-warning mb-0 stat-icon-square">
-                                    <i class="bi bi-clock-history"></i>
+                                <div class="stat-icon bg-success-subtle text-success mb-0 stat-icon-square">
+                                    <i class="bi bi-journal-check"></i>
                                 </div>
                                 <div>
-                                    <span class="text-secondary small fw-semibold">Consultation Hours</span>
-                                    <div class="fw-bold text-dark small">Mon, Wed • 2:00 PM – 4:00 PM</div>
+                                    <span class="text-secondary small fw-semibold">Class Avg GPA</span>
+                                    <div class="kpi-number mb-0" style="font-size: 1.5rem; line-height: 1;">@averageGpa.ToString("0.00")</div>
                                 </div>
                             </div>
                         </div>
@@ -95,74 +101,54 @@
                 </div>
             </div>
 
-            <!-- Student Roster -->
-            <div class="dashboard-card p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h4 class="fw-bold mb-1 page-title-modern" style="font-size:1.15rem;">Academic Student Roster</h4>
-                        <p class="page-subtitle-modern mb-0">
-                            Students currently registered under your academic department.
-                        </p>
+            <!-- Assigned Courses & Timetable Section -->
+            <div class="row g-4 mb-4">
+                <!-- Assigned Courses Grid -->
+                <div class="col-12 col-xl-7">
+                    <div class="dashboard-card p-4 h-100">
+                        <h4 class="fw-bold mb-3 page-title-modern text-dark" style="font-size:1.15rem;">
+                            <i class="bi bi-journal-bookmark-fill text-primary me-2"></i>Assigned Courses
+                        </h4>
+                        <RadzenDataGrid Data="@assignedCourses" TItem="Course" AllowSorting="true" AllowPaging="true" PageSize="5" GridLines="DataGridGridLines.Horizontal">
+                            <Columns>
+                                <RadzenDataGridColumn TItem="Course" Property="CourseCode" Title="Code" Width="100px" />
+                                <RadzenDataGridColumn TItem="Course" Property="Name" Title="Name" />
+                                <RadzenDataGridColumn TItem="Course" Property="Credits" Title="Credits" Width="80px" TextAlign="TextAlign.Center" />
+                                <RadzenDataGridColumn TItem="Course" Property="RoomNo" Title="Room" Width="100px" />
+                                <RadzenDataGridColumn TItem="Course" Title="Enrolled" Width="100px" TextAlign="TextAlign.Center">
+                                    <Template Context="course">
+                                        <span class="badge bg-secondary text-white">@course.Enrollments.Count / @course.MaxCapacity</span>
+                                    </Template>
+                                </RadzenDataGridColumn>
+                            </Columns>
+                        </RadzenDataGrid>
                     </div>
                 </div>
 
-                <RadzenDataGrid Data="@students" TItem="User" AllowSorting="true" AllowPaging="true"
-                                PageSize="10" GridLines="DataGridGridLines.Horizontal">
-                    <Columns>
-                        <RadzenDataGridColumn TItem="User" Title="Student Info" Sortable="false">
-                            <Template Context="student">
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="stat-icon bg-primary-subtle text-primary mb-0 d-none d-sm-flex student-icon-small">
-                                        <i class="bi bi-person-fill"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-bold text-dark">@student.FullName</div>
-                                        <div class="text-secondary small">@student.Email</div>
-                                    </div>
-                                </div>
-                            </Template>
-                        </RadzenDataGridColumn>
-
-                        <RadzenDataGridColumn TItem="User" Property="StudentId" Title="Student ID">
-                            <Template Context="student">
-                                <span class="fw-semibold">@(student.StudentId ?? "Not Assigned")</span>
-                            </Template>
-                        </RadzenDataGridColumn>
-
-                        <RadzenDataGridColumn TItem="User" Property="GradeLevel" Title="Grade Level">
-                            <Template Context="student">
-                                <span class="text-secondary small">@(student.GradeLevel ?? "Unspecified")</span>
-                            </Template>
-                        </RadzenDataGridColumn>
-
-                        <RadzenDataGridColumn TItem="User" Property="AttendanceRate" Title="Attendance">
-                            <Template Context="student">
-                                <div class="d-flex align-items-center gap-2">
-                                    <RadzenProgressBar Value="@(student.AttendanceRate ?? 100)"
-                                                       ShowValue="false" class="progress-bar-small" />
-                                    <span class="fw-semibold font-monospace small">
-                                        @(student.AttendanceRate?.ToString("0.0") ?? "100.0")%
-                                    </span>
-                                </div>
-                            </Template>
-                        </RadzenDataGridColumn>
-
-                        <RadzenDataGridColumn TItem="User" Property="GPA" Title="GPA" Width="90px">
-                            <Template Context="student">
-                                <span class="badge bg-success-subtle text-success font-monospace px-2 py-1">
-                                    @(student.GPA?.ToString("0.00") ?? "0.00")
-                                </span>
-                            </Template>
-                        </RadzenDataGridColumn>
-
-                        <RadzenDataGridColumn TItem="User" Title="" Width="140px" Sortable="false" TextAlign="TextAlign.End">
-                            <Template Context="student">
-                                <RadzenButton Text="Grade" Icon="grading" Click="@(() => OpenGradeModal(student))"
-                                              ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" />
-                            </Template>
-                        </RadzenDataGridColumn>
-                    </Columns>
-                </RadzenDataGrid>
+                <!-- Upcoming Class Sessions (Timetable) -->
+                <div class="col-12 col-xl-5">
+                    <div class="dashboard-card p-4 h-100">
+                        <h4 class="fw-bold mb-3 page-title-modern text-dark" style="font-size:1.15rem;">
+                            <i class="bi bi-calendar3 text-warning me-2"></i>Upcoming Class Sessions
+                        </h4>
+                        <RadzenDataGrid Data="@upcomingSessions" TItem="Timetable" AllowSorting="true" AllowPaging="true" PageSize="5" GridLines="DataGridGridLines.Horizontal">
+                            <Columns>
+                                <RadzenDataGridColumn TItem="Timetable" Property="DayOfWeek" Title="Day" Width="110px">
+                                    <Template Context="session">
+                                        <span class="badge bg-info text-dark">@session.DayOfWeek.ToString()</span>
+                                    </Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="Timetable" Title="Time">
+                                    <Template Context="session">
+                                        <span class="text-dark">@session.StartTime.ToString("hh:mm tt") - @session.EndTime.ToString("hh:mm tt")</span>
+                                    </Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="Timetable" Property="Course.CourseCode" Title="Course" />
+                                <RadzenDataGridColumn TItem="Timetable" Property="RoomNumber" Title="Room" Width="90px" />
+                            </Columns>
+                        </RadzenDataGrid>
+                    </div>
+                </div>
             </div>
         </div>
     </Authorized>
@@ -176,10 +162,11 @@
 </AuthorizeView>
 
 @code {
-    private User? currentTeacher;
-    private List<User> students = new();
+    private Teacher? currentTeacher;
+    private List<Course> assignedCourses = new();
+    private List<Timetable> upcomingSessions = new();
+    private int totalEnrolledStudents = 0;
     private double averageGpa = 0.0;
-
     private List<GpaChartItem> gpaChartData = new();
 
     public class GpaChartItem
@@ -195,11 +182,14 @@
 
         if (!string.IsNullOrEmpty(username))
         {
-            var allUsers = await UserService.GetAllUsersAsync();
-            currentTeacher = allUsers.FirstOrDefault(u => u.Username.ToLower() == username.ToLower());
+            var userIdClaim = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+            {
+                currentTeacher = await TeacherService.GetByUserIdAsync(userId);
+            }
         }
 
-        await LoadStudentsAsync();
+        await LoadDashboardDataAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -220,52 +210,78 @@
         }
     }
 
-    private async Task LoadStudentsAsync()
+    private async Task LoadDashboardDataAsync()
     {
-        students = await UserService.GetUsersByRoleAsync(UserRole.Student);
-        if (students.Any())
-        {
-            averageGpa = students.Average(s => s.GPA ?? 0.0);
+        if (currentTeacher == null) return;
 
-            gpaChartData = new List<GpaChartItem>
+        // Fetch assigned courses
+        assignedCourses = new List<Course>();
+        var uniqueStudentsList = new HashSet<int>();
+        var teacherGrades = new List<Grade>();
+
+        foreach (var ct in currentTeacher.CourseTeachers)
+        {
+            var courseDetails = await CourseService.GetByIdAsync(ct.CourseId);
+            if (courseDetails != null)
             {
-                new() { Range = "3.5 - 4.0", Count = students.Count(s => (s.GPA ?? 0.0) >= 3.5) },
-                new() { Range = "3.0 - 3.49", Count = students.Count(s => (s.GPA ?? 0.0) >= 3.0 && (s.GPA ?? 0.0) < 3.5) },
-                new() { Range = "2.0 - 2.99", Count = students.Count(s => (s.GPA ?? 0.0) >= 2.0 && (s.GPA ?? 0.0) < 3.0) },
-                new() { Range = "< 2.0", Count = students.Count(s => (s.GPA ?? 0.0) < 2.0) }
-            };
+                assignedCourses.Add(courseDetails);
+                foreach (var enrollment in courseDetails.Enrollments)
+                {
+                    if (enrollment.Status == EnrollmentStatus.Active)
+                    {
+                        uniqueStudentsList.Add(enrollment.StudentId);
+                    }
+                }
+
+                var courseGrades = await GradeService.GetByCourseAsync(ct.CourseId);
+                teacherGrades.AddRange(courseGrades);
+            }
+        }
+
+        totalEnrolledStudents = uniqueStudentsList.Count;
+
+        // Fetch upcoming class sessions (Timetable)
+        upcomingSessions = await TimetableService.GetByTeacherAsync(currentTeacher.Id);
+
+        // Class average GPA (weighted average of grades)
+        double totalCredits = 0;
+        double weightedSum = 0;
+        foreach (var g in teacherGrades)
+        {
+            weightedSum += g.GradePoints * g.Course.Credits;
+            totalCredits += g.Course.Credits;
+        }
+
+        if (totalCredits > 0)
+        {
+            averageGpa = Math.Round(weightedSum / totalCredits, 2);
         }
         else
         {
             averageGpa = 0.0;
-            gpaChartData = new();
         }
-    }
 
-    private async Task OpenGradeModal(User student)
-    {
-        // Clone the student to prevent dirtying dashboard state before database commit
-        var studentClone = new User
+        // Fetch student GPAs to build GPA distribution chart data
+        var studentGpas = new List<double>();
+        foreach (var studentId in uniqueStudentsList)
         {
-            Id = student.Id,
-            Username = student.Username,
-            FullName = student.FullName,
-            Email = student.Email,
-            Role = student.Role,
-            CreatedAt = student.CreatedAt,
-            StudentId = student.StudentId,
-            GradeLevel = student.GradeLevel,
-            GPA = student.GPA,
-            AttendanceRate = student.AttendanceRate
-        };
+            var studentGpa = await GradeService.CalculateGPAAsync(studentId);
+            studentGpas.Add(studentGpa);
+        }
 
-        var result = await DialogService.OpenAsync<GradeDialog>("Grade Evaluation",
-            new Dictionary<string, object?> { { "Student", studentClone } },
-            new DialogOptions { Width = "480px", Resizable = false, CloseDialogOnOverlayClick = true });
-
-        if (result == true)
+        if (studentGpas.Any())
         {
-            await LoadStudentsAsync();
+            gpaChartData = new List<GpaChartItem>
+            {
+                new() { Range = "3.5 - 4.0", Count = studentGpas.Count(g => g >= 3.5) },
+                new() { Range = "3.0 - 3.49", Count = studentGpas.Count(g => g >= 3.0 && g < 3.5) },
+                new() { Range = "2.0 - 2.99", Count = studentGpas.Count(g => g >= 2.0 && g < 3.0) },
+                new() { Range = "< 2.0", Count = studentGpas.Count(g => g < 2.0) }
+            };
+        }
+        else
+        {
+            gpaChartData = new();
         }
     }
 }

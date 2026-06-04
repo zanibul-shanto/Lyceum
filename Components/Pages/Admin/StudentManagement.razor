@@ -1,0 +1,336 @@
+@page "/admin/students"
+@inject StudentService StudentService
+@inject CsvImportService CsvImportService
+@inject UserService UserService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<PageTitle>Student Management - Lyceum</PageTitle>
+
+<AuthorizeView Roles="Admin" Context="authContext">
+    <Authorized>
+        <div class="container-fluid py-4 px-xl-5">
+            <!-- Header Section -->
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                <div>
+                    <h1 class="fw-bold mb-1 page-title-modern">Student Management</h1>
+                    <p class="page-subtitle-modern">View and manage system student records, status, and bulk imports.</p>
+                </div>
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <InputFile id="csv-import-input" OnChange="HandleCsvImport" accept=".csv" class="d-none" />
+                    <label for="csv-import-input" class="rz-button rz-button-md rz-variant-flat rz-secondary rz-shade-default d-inline-flex align-items-center justify-content-center cursor-pointer m-0">
+                        <i class="rz-icon-material rzi">upload</i>
+                        <span class="rz-button-text ms-2">Import Students</span>
+                    </label>
+                    <RadzenButton Text="Add Student" Icon="add_circle" Click="ShowAddModal"
+                                  ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Medium" />
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="row g-4 mb-5">
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="dashboard-card">
+                        <div class="kpi-label">Total Students</div>
+                        <div class="kpi-number">@allStudents.Count</div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="dashboard-card">
+                        <div class="kpi-label">Active Students</div>
+                        <div class="kpi-number kpi-active">@allStudents.Count(s => s.User?.IsActive == true)</div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="dashboard-card">
+                        <div class="kpi-label">Inactive Students</div>
+                        <div class="kpi-number kpi-inactive">@allStudents.Count(s => s.User?.IsActive == false)</div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="dashboard-card">
+                        <div class="kpi-label">New This Month</div>
+                        <div class="kpi-number text-info">@allStudents.Count(s => s.EnrollmentDate >= DateTime.UtcNow.AddDays(-30))</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid Section -->
+            <div class="dashboard-card p-4 mb-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                    <h4 class="fw-bold mb-0 page-title-modern">Student Directory</h4>
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <RadzenTextBox @bind-Value="searchTerm" Placeholder="Search students..."
+                                       Change="@(_ => ApplyFilters())" class="search-textbox" />
+                        <RadzenDropDown Data="@statusOptions" @bind-Value="statusFilter"
+                                       Change="@(_ => ApplyFilters())" class="role-dropdown" />
+                    </div>
+                </div>
+
+                <RadzenDataGrid Data="@filteredStudents" TItem="Student" AllowSorting="true" AllowPaging="true"
+                                PageSize="10" GridLines="DataGridGridLines.Horizontal">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="Student" Property="StudentCode" Title="Student Code" Width="140px">
+                            <Template Context="student">
+                                <span class="font-monospace fw-semibold text-primary">@student.StudentCode</span>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="Student" Title="Full Name">
+                            <Template Context="student">
+                                <div class="fw-bold text-dark">@student.User?.FullName</div>
+                                <div class="text-secondary small">@@@(student.User?.Username ?? "N/A")</div>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="Student" Title="Email">
+                            <Template Context="student">
+                                <span class="text-secondary small">@student.User?.Email</span>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="Student" Property="Phone" Title="Phone" Width="150px">
+                            <Template Context="student">
+                                <span>@(string.IsNullOrWhiteSpace(student.Phone) ? "—" : student.Phone)</span>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="Student" Property="EnrollmentDate" Title="Enrollment Date" Width="160px">
+                            <Template Context="student">
+                                <span class="text-secondary small">@student.EnrollmentDate.ToLocalTime().ToString("MMM dd, yyyy")</span>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="Student" Title="Active" Width="90px" Sortable="false" TextAlign="TextAlign.Center">
+                            <Template Context="student">
+                                <div class="form-check form-switch mb-0 d-flex justify-content-center">
+                                    <input class="form-check-input animate-switch" type="checkbox" role="switch"
+                                           checked="@(student.User?.IsActive ?? false)" @onchange="() => ToggleActive(student)"
+                                           title="@(student.User?.IsActive == true ? "Deactivate" : "Activate")" />
+                                </div>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="Student" Title="Actions" Width="120px" Sortable="false" TextAlign="TextAlign.End">
+                            <Template Context="student">
+                                <RadzenButton Icon="edit" Click="@(() => ShowEditModal(student))"
+                                              ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" class="me-1" title="Edit Student" />
+                                <RadzenButton Icon="delete" Click="@(() => ConfirmDelete(student))"
+                                              ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" title="Delete Student" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="d-flex flex-column align-items-center justify-content-center portal-loading-container">
+            <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate"
+                                       Size="ProgressBarCircularSize.Large" />
+            <p class="mt-3 text-secondary fw-semibold">Loading Student Records...</p>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+<style>
+    .cursor-pointer {
+        cursor: pointer;
+    }
+    .animate-switch {
+        transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+    }
+</style>
+
+@code {
+    private List<Student> allStudents = [];
+    private List<Student> filteredStudents = [];
+    private string searchTerm = string.Empty;
+    private string statusFilter = "All";
+    private readonly List<string> statusOptions = ["All", "Active", "Inactive"];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated != true)
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+            var role = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            if (role != "Admin")
+            {
+                Navigation.NavigateTo("/login");
+            }
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            allStudents = await StudentService.GetAllAsync();
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Failed to load students: {ex.Message}");
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        var result = allStudents.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var q = searchTerm.Trim().ToLower();
+            result = result.Where(s =>
+                s.StudentCode.ToLower().Contains(q) ||
+                (s.User?.FullName != null && s.User.FullName.ToLower().Contains(q)) ||
+                (s.User?.Email != null && s.User.Email.ToLower().Contains(q)) ||
+                (s.Phone != null && s.Phone.Contains(q))
+            );
+        }
+
+        if (statusFilter == "Active")
+        {
+            result = result.Where(s => s.User?.IsActive == true);
+        }
+        else if (statusFilter == "Inactive")
+        {
+            result = result.Where(s => s.User?.IsActive == false);
+        }
+
+        filteredStudents = result.ToList();
+    }
+
+    private async Task ShowAddModal()
+    {
+        var result = await DialogService.OpenAsync<StudentDialog>("Add New Student",
+            new Dictionary<string, object?> { { "Student", null } },
+            new DialogOptions { Width = "650px", Resizable = false, CloseDialogOnOverlayClick = true });
+
+        if (result == true)
+        {
+            await LoadDataAsync();
+        }
+    }
+
+    private async Task ShowEditModal(Student student)
+    {
+        // Clone the student user context for safe editing in dialog
+        var studentClone = new Student
+        {
+            Id = student.Id,
+            UserId = student.UserId,
+            StudentCode = student.StudentCode,
+            DateOfBirth = student.DateOfBirth,
+            Gender = student.Gender,
+            Phone = student.Phone,
+            Address = student.Address,
+            EnrollmentDate = student.EnrollmentDate,
+            PhotoUrl = student.PhotoUrl,
+            User = new User
+            {
+                Id = student.User.Id,
+                FullName = student.User.FullName,
+                Email = student.User.Email,
+                Username = student.User.Username,
+                IsActive = student.User.IsActive
+            }
+        };
+
+        var result = await DialogService.OpenAsync<StudentDialog>("Edit Student Profile",
+            new Dictionary<string, object?> { { "Student", studentClone } },
+            new DialogOptions { Width = "650px", Resizable = false, CloseDialogOnOverlayClick = true });
+
+        if (result == true)
+        {
+            await LoadDataAsync();
+        }
+    }
+
+    private async Task ToggleActive(Student student)
+    {
+        try
+        {
+            await StudentService.DeactivateAsync(student.Id);
+            if (student.User != null)
+            {
+                student.User.IsActive = !student.User.IsActive;
+            }
+            ApplyFilters();
+            NotificationService.Notify(NotificationSeverity.Success, "Status Updated", "Student status updated successfully.");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Failed to toggle status: {ex.Message}");
+        }
+    }
+
+    private async Task ConfirmDelete(Student student)
+    {
+        var confirm = await DialogService.Confirm(
+            $"Are you sure you want to permanently delete student {student.User?.FullName} ({student.StudentCode})? This action cannot be undone.",
+            "Delete Student Account",
+            new ConfirmOptions { OkButtonText = "Delete Permanently", CancelButtonText = "Cancel" });
+
+        if (confirm == true)
+        {
+            try
+            {
+                await StudentService.DeleteAsync(student.Id);
+                await LoadDataAsync();
+                NotificationService.Notify(NotificationSeverity.Warning, "Deleted", "Student has been removed.");
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Error", $"Could not delete student: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task HandleCsvImport(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file != null)
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024); // limit 5MB
+                var result = await CsvImportService.ImportStudentsAsync(stream);
+
+                if (result.SuccessCount > 0)
+                {
+                    NotificationService.Notify(NotificationSeverity.Success, "Import Successful", 
+                        $"Successfully imported {result.SuccessCount} students.");
+                    await LoadDataAsync();
+                }
+
+                if (result.Errors.Any())
+                {
+                    var errors = string.Join("<br />", result.Errors.Take(5));
+                    if (result.Errors.Count > 5)
+                    {
+                        errors += $"<br />... and {result.Errors.Count - 5} more errors.";
+                    }
+                    NotificationService.Notify(NotificationSeverity.Warning, "Import Summary with Warnings", errors, duration: 8000);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Import Failed", ex.Message);
+        }
+    }
+}

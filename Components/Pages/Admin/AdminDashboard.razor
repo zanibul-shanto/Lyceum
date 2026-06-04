@@ -1,6 +1,6 @@
 @page "/admin/dashboard"
 @inject UserService UserService
-@inject CustomAuthStateProvider AuthStateProvider
+@inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 @inject NotificationService NotificationService
 @inject DialogService DialogService
@@ -173,27 +173,16 @@
                             </Template>
                         </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="User" Title="Details" Sortable="false">
+                        <RadzenDataGridColumn TItem="User" Title="Status" Width="100px" Sortable="false" TextAlign="TextAlign.Center">
                             <Template Context="user">
-                                <div class="small">
-                                    @if (user.Role == UserRole.Student)
-                                    {
-                                        <span class="text-secondary">ID:</span> <span class="fw-semibold">@user.StudentId</span>
-                                        <br />
-                                        <span class="text-secondary">GPA:</span>
-                                        <span class="badge bg-success-subtle text-success font-monospace ms-1">@user.GPA?.ToString("0.00")</span>
-                                    }
-                                    else if (user.Role == UserRole.Teacher)
-                                    {
-                                        <span class="text-secondary">Dept:</span> <span class="fw-semibold">@user.Department</span>
-                                        <br />
-                                        <span class="text-secondary">ID:</span> <span class="fw-semibold">@user.TeacherId</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-secondary">—</span>
-                                    }
-                                </div>
+                                @if (user.IsActive)
+                                {
+                                    <span class="badge bg-success-subtle text-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger-subtle text-danger">Inactive</span>
+                                }
                             </Template>
                         </RadzenDataGridColumn>
 
@@ -335,14 +324,7 @@
             Email = user.Email,
             Role = user.Role,
             CreatedAt = user.CreatedAt,
-            StudentId = user.StudentId,
-            GradeLevel = user.GradeLevel,
-            GPA = user.GPA,
-            AttendanceRate = user.AttendanceRate,
-            TeacherId = user.TeacherId,
-            Department = user.Department,
-            Bio = user.Bio,
-            OfficeRoom = user.OfficeRoom
+            IsActive = user.IsActive
         };
 
         var result = await DialogService.OpenAsync<UserDialog>("Edit User Profile",

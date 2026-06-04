@@ -29,17 +29,13 @@ public class User : IdentityUser<int>
     [Required]
     public UserRole Role { get; set; } = UserRole.Student;
 
+    public bool IsActive { get; set; } = true;
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    // Student Specific Fields
-    public string? StudentId { get; set; }
-    public string? GradeLevel { get; set; }
-    public double? GPA { get; set; }
-    public double? AttendanceRate { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
-    // Teacher Specific Fields
-    public string? TeacherId { get; set; }
-    public string? Department { get; set; }
-    public string? Bio { get; set; }
-    public string? OfficeRoom { get; set; }
+    // Navigation
+    public Student? Student { get; set; }
+    public Teacher? Teacher { get; set; }
 }

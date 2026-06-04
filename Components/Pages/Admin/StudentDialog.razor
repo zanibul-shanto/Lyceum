@@ -1,0 +1,188 @@
+@inject StudentService StudentService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<div class="p-3">
+    @if (!string.IsNullOrEmpty(modalError))
+    {
+        <div class="alert alert-danger border-0 mb-3 alert-custom">@modalError</div>
+    }
+
+    <EditForm Model="FormModel" OnValidSubmit="SaveStudent" FormName="StudentDialogForm">
+        <DataAnnotationsValidator />
+
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold small text-secondary">Full Name</label>
+                <InputText @bind-Value="FormModel.FullName" class="form-control form-control-custom"
+                           placeholder="Enter full name" />
+                <ValidationMessage For="() => FormModel.FullName" />
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold small text-secondary">Email Address</label>
+                <InputText @bind-Value="FormModel.Email" class="form-control form-control-custom"
+                           placeholder="Enter email address" />
+                <ValidationMessage For="() => FormModel.Email" />
+            </div>
+
+            @if (FormModel.Id == 0)
+            {
+                <div class="col-12">
+                    <label class="form-label fw-semibold small text-secondary">Temporary Password</label>
+                    <input type="password" @bind="FormModel.Password" class="form-control form-control-custom"
+                           placeholder="Enter password (min 6 characters)" required />
+                    <ValidationMessage For="() => FormModel.Password" />
+                </div>
+            }
+
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold small text-secondary">Date of Birth</label>
+                <InputDate @bind-Value="FormModel.DateOfBirth" class="form-control form-control-custom" />
+                <ValidationMessage For="() => FormModel.DateOfBirth" />
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold small text-secondary">Gender</label>
+                <InputSelect @bind-Value="FormModel.Gender" class="form-select form-control-custom">
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </InputSelect>
+                <ValidationMessage For="() => FormModel.Gender" />
+            </div>
+
+            <div class="col-12">
+                <label class="form-label fw-semibold small text-secondary">Phone Number</label>
+                <InputText @bind-Value="FormModel.Phone" class="form-control form-control-custom"
+                           placeholder="Enter phone number" />
+                <ValidationMessage For="() => FormModel.Phone" />
+            </div>
+
+            <div class="col-12">
+                <label class="form-label fw-semibold small text-secondary">Address</label>
+                <InputTextArea @bind-Value="FormModel.Address" class="form-control form-control-custom"
+                               rows="2" placeholder="Enter residential address" />
+                <ValidationMessage For="() => FormModel.Address" />
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <RadzenButton Text="Cancel" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Save Student" Icon="save" ButtonStyle="ButtonStyle.Primary" />
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter] public Student? Student { get; set; }
+
+    private StudentFormModel FormModel { get; set; } = new();
+    private string? modalError;
+
+    protected override void OnInitialized()
+    {
+        if (Student != null && Student.Id != 0)
+        {
+            FormModel = new StudentFormModel
+            {
+                Id = Student.Id,
+                FullName = Student.User?.FullName ?? "",
+                Email = Student.User?.Email ?? "",
+                DateOfBirth = Student.DateOfBirth,
+                Gender = Student.Gender,
+                Phone = Student.Phone,
+                Address = Student.Address
+            };
+        }
+        else
+        {
+            FormModel = new StudentFormModel();
+        }
+    }
+
+    private async Task SaveStudent()
+    {
+        modalError = null;
+        try
+        {
+            if (FormModel.Id == 0)
+            {
+                if (string.IsNullOrWhiteSpace(FormModel.Password) || FormModel.Password.Length < 6)
+                {
+                    modalError = "A password of at least 6 characters is required.";
+                    return;
+                }
+
+                // Auto-generate username from email prefix
+                var emailParts = FormModel.Email.Split('@');
+                if (emailParts.Length < 2)
+                {
+                    modalError = "Invalid email format.";
+                    return;
+                }
+                var username = emailParts[0].ToLower().Replace(".", "").Replace("-", "").Replace("_", "");
+
+                await StudentService.CreateAsync(
+                    FormModel.FullName,
+                    FormModel.Email,
+                    username,
+                    FormModel.Password,
+                    FormModel.DateOfBirth,
+                    FormModel.Gender,
+                    FormModel.Phone,
+                    FormModel.Address
+                );
+            }
+            else
+            {
+                if (Student != null)
+                {
+                    Student.User.FullName = FormModel.FullName;
+                    Student.User.Email = FormModel.Email;
+                    Student.DateOfBirth = FormModel.DateOfBirth;
+                    Student.Gender = FormModel.Gender;
+                    Student.Phone = FormModel.Phone;
+                    Student.Address = FormModel.Address;
+
+                    await StudentService.UpdateAsync(Student);
+                }
+            }
+
+            DialogService.Close(true);
+            NotificationService.Notify(NotificationSeverity.Success, "Saved", "Student details saved successfully.");
+        }
+        catch (Exception ex)
+        {
+            modalError = ex.Message;
+        }
+    }
+
+    public class StudentFormModel
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "Full name is required")]
+        [StringLength(100, ErrorMessage = "Full name cannot exceed 100 characters")]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email format")]
+        [StringLength(100, ErrorMessage = "Email cannot exceed 100 characters")]
+        public string Email { get; set; } = string.Empty;
+
+        public string Password { get; set; } = string.Empty;
+
+        public DateTime? DateOfBirth { get; set; }
+
+        [StringLength(10, ErrorMessage = "Gender cannot exceed 10 characters")]
+        public string? Gender { get; set; }
+
+        [StringLength(20, ErrorMessage = "Phone number cannot exceed 20 characters")]
+        public string? Phone { get; set; }
+
+        [StringLength(300, ErrorMessage = "Address cannot exceed 300 characters")]
+        public string? Address { get; set; }
+    }
+}

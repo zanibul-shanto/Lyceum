@@ -1,0 +1,233 @@
+@page "/teacher/grades"
+@inject TeacherService TeacherService
+@inject EnrollmentService EnrollmentService
+@inject GradeService GradeService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<PageTitle>Grade Entry - Lyceum</PageTitle>
+
+<AuthorizeView Roles="Teacher">
+    <Authorized>
+        <div class="container-fluid py-4 px-xl-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1 page-title-modern text-white">Grade Entry</h3>
+                    <p class="page-subtitle-modern mb-0 text-secondary">Record and modify academic grades for students enrolled in your courses.</p>
+                </div>
+            </div>
+
+            <!-- Course Selection Card -->
+            <div class="dashboard-card p-4 mb-4">
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-md-5">
+                        <label class="form-label text-secondary fw-semibold small">Select Course</label>
+                        <RadzenDropDown TValue="int?" Value="@selectedCourseId" Data="@assignedCourses" 
+                                        TextProperty="Name" ValueProperty="Id" 
+                                        Change="@(args => OnCourseChanged((int?)args))" 
+                                        Placeholder="Choose a course to view roster..." class="w-100" />
+                    </div>
+                </div>
+            </div>
+
+            @if (selectedCourseId.HasValue)
+            {
+                <div class="dashboard-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h5 class="fw-bold mb-1 text-dark"><i class="bi bi-journal-bookmark-fill text-primary me-2"></i>Academic Grade Roster</h5>
+                            <p class="text-secondary small mb-0">Select "Edit" to enter or update student grades.</p>
+                        </div>
+                    </div>
+
+                    @if (!studentGrades.Any())
+                    {
+                        <div class="alert alert-warning py-3 mb-0 border-0">
+                            No students are currently enrolled in this course.
+                        </div>
+                    }
+                    else
+                    {
+                        <RadzenDataGrid Data="@studentGrades" TItem="StudentGradeViewModel" AllowSorting="true" AllowPaging="true" PageSize="10" GridLines="DataGridGridLines.Horizontal">
+                            <Columns>
+                                <RadzenDataGridColumn TItem="StudentGradeViewModel" Property="Student.User.FullName" Title="Name">
+                                    <Template Context="model">
+                                        <div class="fw-bold text-dark">@model.Student.User?.FullName</div>
+                                    </Template>
+                                </RadzenDataGridColumn>
+
+                                <RadzenDataGridColumn TItem="StudentGradeViewModel" Property="Student.StudentCode" Title="Student Code" Width="140px">
+                                    <Template Context="model">
+                                        <span class="fw-semibold text-secondary">@model.Student.StudentCode</span>
+                                    </Template>
+                                </RadzenDataGridColumn>
+
+                                <RadzenDataGridColumn TItem="StudentGradeViewModel" Title="Assignment Marks" TextAlign="TextAlign.Center" Width="150px">
+                                    <Template Context="model">
+                                        <span class="font-monospace fw-semibold">
+                                            @(model.Grade != null ? $"{model.Grade.AssignmentMarks:0.0}" : "-")
+                                        </span>
+                                    </Template>
+                                </RadzenDataGridColumn>
+
+                                <RadzenDataGridColumn TItem="StudentGradeViewModel" Title="Midterm Marks" TextAlign="TextAlign.Center" Width="140px">
+                                    <Template Context="model">
+                                        <span class="font-monospace fw-semibold">
+                                            @(model.Grade != null ? $"{model.Grade.MidtermMarks:0.0}" : "-")
+                                        </span>
+                                    </Template>
+                                </RadzenDataGridColumn>
+
+                                <RadzenDataGridColumn TItem="StudentGradeViewModel" Title="Final Marks" TextAlign="TextAlign.Center" Width="130px">
+                                    <Template Context="model">
+                                        <span class="font-monospace fw-semibold">
+                                            @(model.Grade != null ? $"{model.Grade.FinalMarks:0.0}" : "-")
+                                        </span>
+                                    </Template>
+                                </RadzenDataGridColumn>
+
+                                <RadzenDataGridColumn TItem="StudentGradeViewModel" Title="Total Marks" TextAlign="TextAlign.Center" Width="130px">
+                                    <Template Context="model">
+                                        <span class="font-monospace fw-bold text-primary">
+                                            @(model.Grade != null ? $"{model.Grade.TotalMarks:0.0}" : "-")
+                                        </span>
+                                    </Template>
+                                </RadzenDataGridColumn>
+
+                                <RadzenDataGridColumn TItem="StudentGradeViewModel" Title="Letter Grade" TextAlign="TextAlign.Center" Width="130px">
+                                    <Template Context="model">
+                                        @if (model.Grade != null)
+                                        {
+                                            <span class="badge bg-success-subtle text-success font-monospace px-2 py-1">
+                                                @model.Grade.LetterGrade
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-secondary small">-</span>
+                                        }
+                                    </Template>
+                                </RadzenDataGridColumn>
+
+                                <RadzenDataGridColumn TItem="StudentGradeViewModel" Title="Actions" Width="120px" Sortable="false" TextAlign="TextAlign.End">
+                                    <Template Context="model">
+                                        <RadzenButton Text="Edit" Icon="edit" Click="@(() => OpenGradeModal(model.Student.Id))"
+                                                      ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" />
+                                    </Template>
+                                </RadzenDataGridColumn>
+                            </Columns>
+                        </RadzenDataGrid>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info py-3 border-0 shadow-sm">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    Please select a course to view and edit student grades.
+                </div>
+            }
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="d-flex flex-column align-items-center justify-content-center portal-loading-container">
+            <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Large" />
+            <p class="mt-3 text-secondary fw-semibold">Loading Portal...</p>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private Teacher? currentTeacher;
+    private List<Course> assignedCourses = new();
+    private int? selectedCourseId;
+    private List<StudentGradeViewModel> studentGrades = new();
+
+    public class StudentGradeViewModel
+    {
+        public Student Student { get; set; } = null!;
+        public Grade? Grade { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var userIdStr = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(userIdStr, out int userId))
+            {
+                currentTeacher = await TeacherService.GetByUserIdAsync(userId);
+                if (currentTeacher != null)
+                {
+                    assignedCourses = currentTeacher.CourseTeachers.Select(ct => ct.Course).ToList();
+                }
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated != true ||
+                authState.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value != "Teacher")
+            {
+                Navigation.NavigateTo("/login");
+            }
+        }
+    }
+
+    private async Task OnCourseChanged(int? courseId)
+    {
+        selectedCourseId = courseId;
+        if (selectedCourseId.HasValue)
+        {
+            await LoadGradesAsync();
+        }
+        else
+        {
+            studentGrades.Clear();
+        }
+    }
+
+    private async Task LoadGradesAsync()
+    {
+        if (!selectedCourseId.HasValue) return;
+
+        var enrollments = await EnrollmentService.GetByCourseAsync(selectedCourseId.Value);
+        var courseGrades = await GradeService.GetByCourseAsync(selectedCourseId.Value);
+
+        studentGrades = enrollments
+            .Where(e => e.Status == EnrollmentStatus.Active)
+            .Select(e => new StudentGradeViewModel
+            {
+                Student = e.Student,
+                Grade = courseGrades.FirstOrDefault(g => g.StudentId == e.StudentId)
+            })
+            .ToList();
+    }
+
+    private async Task OpenGradeModal(int studentId)
+    {
+        if (!selectedCourseId.HasValue || currentTeacher == null) return;
+
+        var result = await DialogService.OpenAsync<GradeDialog>("Grade Evaluation",
+            new Dictionary<string, object?>
+            {
+                { "StudentId", studentId },
+                { "CourseId", selectedCourseId.Value }
+            },
+            new DialogOptions { Width = "480px", Resizable = false, CloseDialogOnOverlayClick = true });
+
+        if (result == true)
+        {
+            await LoadGradesAsync();
+        }
+    }
+}

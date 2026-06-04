@@ -1,0 +1,199 @@
+@inject TeacherService TeacherService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<div class="p-3">
+    @if (!string.IsNullOrEmpty(modalError))
+    {
+        <div class="alert alert-danger border-0 mb-3 alert-custom">@modalError</div>
+    }
+
+    <EditForm Model="FormModel" OnValidSubmit="SaveTeacher" FormName="TeacherDialogForm">
+        <DataAnnotationsValidator />
+
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold small text-secondary">Full Name</label>
+                <InputText @bind-Value="FormModel.FullName" class="form-control form-control-custom"
+                           placeholder="Enter full name" />
+                <ValidationMessage For="() => FormModel.FullName" />
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold small text-secondary">Email Address</label>
+                <InputText @bind-Value="FormModel.Email" class="form-control form-control-custom"
+                           placeholder="Enter email address" />
+                <ValidationMessage For="() => FormModel.Email" />
+            </div>
+
+            @if (FormModel.Id == 0)
+            {
+                <div class="col-12">
+                    <label class="form-label fw-semibold small text-secondary">Temporary Password</label>
+                    <input type="password" @bind="FormModel.Password" class="form-control form-control-custom"
+                           placeholder="Enter password (min 6 characters)" required />
+                    <ValidationMessage For="() => FormModel.Password" />
+                </div>
+            }
+
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold small text-secondary">Department</label>
+                <InputText @bind-Value="FormModel.Department" class="form-control form-control-custom"
+                           placeholder="e.g. Computer Science" />
+                <ValidationMessage For="() => FormModel.Department" />
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold small text-secondary">Qualification</label>
+                <InputText @bind-Value="FormModel.Qualification" class="form-control form-control-custom"
+                           placeholder="e.g. Ph.D. in CS" />
+                <ValidationMessage For="() => FormModel.Qualification" />
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold small text-secondary">Phone Number</label>
+                <InputText @bind-Value="FormModel.Phone" class="form-control form-control-custom"
+                           placeholder="Enter phone number" />
+                <ValidationMessage For="() => FormModel.Phone" />
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold small text-secondary">Office Room</label>
+                <InputText @bind-Value="FormModel.OfficeRoom" class="form-control form-control-custom"
+                           placeholder="e.g. Room 402" />
+                <ValidationMessage For="() => FormModel.OfficeRoom" />
+            </div>
+
+            <div class="col-12">
+                <label class="form-label fw-semibold small text-secondary">Biography</label>
+                <InputTextArea @bind-Value="FormModel.Bio" class="form-control form-control-custom"
+                               rows="3" placeholder="Enter teacher biography or academic background..." />
+                <ValidationMessage For="() => FormModel.Bio" />
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <RadzenButton Text="Cancel" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Save Teacher" Icon="save" ButtonStyle="ButtonStyle.Primary" />
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter] public Teacher? Teacher { get; set; }
+
+    private TeacherFormModel FormModel { get; set; } = new();
+    private string? modalError;
+
+    protected override void OnInitialized()
+    {
+        if (Teacher != null && Teacher.Id != 0)
+        {
+            FormModel = new TeacherFormModel
+            {
+                Id = Teacher.Id,
+                FullName = Teacher.User?.FullName ?? "",
+                Email = Teacher.User?.Email ?? "",
+                Department = Teacher.Department,
+                Qualification = Teacher.Qualification,
+                Phone = Teacher.Phone,
+                OfficeRoom = Teacher.OfficeRoom,
+                Bio = Teacher.Bio
+            };
+        }
+        else
+        {
+            FormModel = new TeacherFormModel();
+        }
+    }
+
+    private async Task SaveTeacher()
+    {
+        modalError = null;
+        try
+        {
+            if (FormModel.Id == 0)
+            {
+                if (string.IsNullOrWhiteSpace(FormModel.Password) || FormModel.Password.Length < 6)
+                {
+                    modalError = "A password of at least 6 characters is required.";
+                    return;
+                }
+
+                // Auto-generate username from email prefix
+                var emailParts = FormModel.Email.Split('@');
+                if (emailParts.Length < 2)
+                {
+                    modalError = "Invalid email format.";
+                    return;
+                }
+                var username = emailParts[0].ToLower().Replace(".", "").Replace("-", "").Replace("_", "");
+
+                await TeacherService.CreateAsync(
+                    FormModel.FullName,
+                    FormModel.Email,
+                    username,
+                    FormModel.Password,
+                    FormModel.Department,
+                    FormModel.Qualification,
+                    FormModel.Phone,
+                    FormModel.OfficeRoom,
+                    FormModel.Bio
+                );
+            }
+            else
+            {
+                if (Teacher != null)
+                {
+                    Teacher.User.FullName = FormModel.FullName;
+                    Teacher.User.Email = FormModel.Email;
+                    Teacher.Department = FormModel.Department;
+                    Teacher.Qualification = FormModel.Qualification;
+                    Teacher.Phone = FormModel.Phone;
+                    Teacher.OfficeRoom = FormModel.OfficeRoom;
+                    Teacher.Bio = FormModel.Bio;
+
+                    await TeacherService.UpdateAsync(Teacher);
+                }
+            }
+
+            DialogService.Close(true);
+            NotificationService.Notify(NotificationSeverity.Success, "Saved", "Teacher details saved successfully.");
+        }
+        catch (Exception ex)
+        {
+            modalError = ex.Message;
+        }
+    }
+
+    public class TeacherFormModel
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "Full name is required")]
+        [StringLength(100, ErrorMessage = "Full name cannot exceed 100 characters")]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email format")]
+        [StringLength(100, ErrorMessage = "Email cannot exceed 100 characters")]
+        public string Email { get; set; } = string.Empty;
+
+        public string Password { get; set; } = string.Empty;
+
+        [StringLength(100, ErrorMessage = "Department cannot exceed 100 characters")]
+        public string? Department { get; set; }
+
+        [StringLength(100, ErrorMessage = "Qualification cannot exceed 100 characters")]
+        public string? Qualification { get; set; }
+
+        [StringLength(20, ErrorMessage = "Phone number cannot exceed 20 characters")]
+        public string? Phone { get; set; }
+
+        [StringLength(50, ErrorMessage = "Office room cannot exceed 50 characters")]
+        public string? OfficeRoom { get; set; }
+
+        [StringLength(500, ErrorMessage = "Bio cannot exceed 500 characters")]
+        public string? Bio { get; set; }
+    }
+}

@@ -1,0 +1,234 @@
+@page "/student/grades"
+@inject StudentService StudentService
+@inject GradeService GradeService
+@inject ReportService ReportService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Grades - Lyceum</PageTitle>
+
+<AuthorizeView Roles="Student" Context="authContext">
+    <Authorized>
+        <div class="container-fluid p-0">
+            <!-- Premium Seamless Page Header -->
+            <div class="premium-page-header mb-4">
+                <div>
+                    <h1 class="page-title-modern">Academic Grades</h1>
+                    <div class="page-subtitle-modern">View your evaluation marks, cumulative GPA, and download official reports</div>
+                </div>
+                <div class="header-right-block">
+                    @if (currentStudent != null)
+                    {
+                        <RadzenButton Text="Download Grade Report" Icon="download"
+                                      Click="DownloadReport" ButtonStyle="ButtonStyle.Secondary"
+                                      IsBusy="downloading" BusyText="Generating PDF..." />
+                    }
+                </div>
+            </div>
+
+            @if (loading)
+            {
+                <div class="d-flex flex-column align-items-center justify-content-center py-5">
+                    <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
+                    <p class="mt-3 text-secondary fw-semibold">Loading grades...</p>
+                </div>
+            }
+            else if (currentStudent == null)
+            {
+                <div class="dashboard-card p-5 text-center">
+                    <p class="text-secondary mb-0">Student details could not be found.</p>
+                </div>
+            }
+            else
+            {
+                <div class="row g-4 mb-4">
+                    <!-- Cumulative GPA Card -->
+                    <div class="col-12 col-md-4">
+                        <div class="kpi-card h-100 p-4 text-center d-flex flex-column justify-content-center align-items-center">
+                            <div class="kpi-label">Cumulative GPA</div>
+                            <div class="kpi-number my-2 text-success font-outfit">@cumulativeGpa.ToString("0.00")</div>
+                            <div class="kpi-footer text-secondary">
+                                Based on completed course grades
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total Credits Card -->
+                    <div class="col-12 col-md-4">
+                        <div class="kpi-card h-100 p-4 text-center d-flex flex-column justify-content-center align-items-center">
+                            <div class="kpi-label">Total Completed Credits</div>
+                            <div class="kpi-number my-2 text-primary font-outfit">@totalCredits</div>
+                            <div class="kpi-footer text-secondary">
+                                Enrolled credit hours
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Grading Scale Legend Card -->
+                    <div class="col-12 col-md-4">
+                        <div class="dashboard-card h-100 p-3">
+                            <h6 class="fw-bold mb-2 text-dark"><i class="bi bi-info-circle me-1 text-info"></i>Grading Scheme</h6>
+                            <div class="row g-1 small text-secondary font-monospace">
+                                <div class="col-6">A: 90-100% (4.0)</div>
+                                <div class="col-6">B: 80-89% (3.0)</div>
+                                <div class="col-6">C: 70-79% (2.0)</div>
+                                <div class="col-6">D: 60-69% (1.0)</div>
+                                <div class="col-12 text-danger">F: &lt; 60% (0.0)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grades DataGrid -->
+                <div class="grades-card-modern p-4">
+                    <h5 class="grades-card-title mb-4"><i class="bi bi-award me-2 text-primary"></i>Course Evaluations</h5>
+                    @if (grades.Count > 0)
+                    {
+                        <RadzenDataGrid Data="@grades" TItem="Grade" GridLines="DataGridGridLines.Horizontal">
+                            <Columns>
+                                <RadzenDataGridColumn TItem="Grade" Property="Course.CourseCode" Title="Code" Width="100px" />
+                                <RadzenDataGridColumn TItem="Grade" Property="Course.Name" Title="Course Name" />
+                                <RadzenDataGridColumn TItem="Grade" Property="AssignmentMarks" Title="Assignment (30%)" Width="140px" TextAlign="TextAlign.Center">
+                                    <Template Context="grade">
+                                        <span class="font-monospace">@grade.AssignmentMarks.ToString("0.0")</span>
+                                    </Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="Grade" Property="MidtermMarks" Title="Midterm (30%)" Width="130px" TextAlign="TextAlign.Center">
+                                    <Template Context="grade">
+                                        <span class="font-monospace">@grade.MidtermMarks.ToString("0.0")</span>
+                                    </Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="Grade" Property="FinalMarks" Title="Final (40%)" Width="110px" TextAlign="TextAlign.Center">
+                                    <Template Context="grade">
+                                        <span class="font-monospace">@grade.FinalMarks.ToString("0.0")</span>
+                                    </Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="Grade" Property="TotalMarks" Title="Total" Width="90px" TextAlign="TextAlign.Center">
+                                    <Template Context="grade">
+                                        <span class="font-monospace fw-bold">@grade.TotalMarks.ToString("0.0")</span>
+                                    </Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="Grade" Title="Grade" Width="90px" TextAlign="TextAlign.Center">
+                                    <Template Context="grade">
+                                        <span class="badge-grade-modern @GetGradeClass(grade.LetterGrade ?? "F")">
+                                            @(grade.LetterGrade ?? "F")
+                                        </span>
+                                    </Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="Grade" Title="Points" Width="90px" TextAlign="TextAlign.Center">
+                                    <Template Context="grade">
+                                        <span class="fw-semibold text-secondary font-monospace">@grade.GradePoints.ToString("0.0")</span>
+                                    </Template>
+                                </RadzenDataGridColumn>
+                            </Columns>
+                        </RadzenDataGrid>
+                    }
+                    else
+                    {
+                        <p class="text-secondary mb-0">No grade reports have been entered for your courses.</p>
+                    }
+                </div>
+            }
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="d-flex flex-column align-items-center justify-content-center portal-loading-container">
+            <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Large" />
+            <p class="mt-3 text-secondary fw-semibold">Loading Student Portal...</p>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private bool loading = true;
+    private bool downloading = false;
+    private Student? currentStudent;
+    private double cumulativeGpa = 0.0;
+    private int totalCredits = 0;
+    private List<Grade> grades = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var username = authState.User.Identity?.Name;
+
+        if (!string.IsNullOrEmpty(username))
+        {
+            var userIdClaim = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+            {
+                currentStudent = await StudentService.GetByUserIdAsync(userId);
+            }
+        }
+
+        if (currentStudent != null)
+        {
+            grades = await GradeService.GetByStudentAsync(currentStudent.Id);
+            cumulativeGpa = await GradeService.CalculateGPAAsync(currentStudent.Id);
+            totalCredits = currentStudent.Enrollments
+                .Where(e => e.Status == EnrollmentStatus.Active)
+                .Sum(e => e.Course.Credits);
+        }
+        loading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated != true)
+            {
+                Navigation.NavigateTo("/login");
+            }
+            else
+            {
+                var role = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                if (role != "Student")
+                {
+                    Navigation.NavigateTo("/login");
+                }
+            }
+        }
+    }
+
+    private async Task DownloadReport()
+    {
+        if (currentStudent == null || downloading) return;
+        downloading = true;
+        try
+        {
+            var pdfBytes = await ReportService.GenerateStudentGradeReportAsync(currentStudent.Id);
+            var base64 = Convert.ToBase64String(pdfBytes);
+            var filename = $"Lyceum_Grade_Report_{currentStudent.StudentCode}.pdf";
+            
+            await JSRuntime.InvokeVoidAsync("eval", 
+                $"const link = document.createElement('a');" +
+                $"link.download = '{filename}';" +
+                $"link.href = 'data:application/pdf;base64,{base64}';" +
+                $"document.body.appendChild(link);" +
+                $"link.click();" +
+                $"document.body.removeChild(link);");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error exporting grades: {ex.Message}");
+        }
+        finally
+        {
+            downloading = false;
+        }
+    }
+
+    private string GetGradeClass(string grade)
+    {
+        return grade.Trim().ToUpper() switch
+        {
+            "A" or "A-" => "badge-grade-a",
+            "B+" or "B" or "B-" => "badge-grade-b",
+            "C+" or "C" or "C-" => "badge-grade-c",
+            _ => "badge-grade-pending"
+        };
+    }
+}

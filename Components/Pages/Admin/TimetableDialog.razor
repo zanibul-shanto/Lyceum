@@ -1,0 +1,209 @@
+@inject TimetableService TimetableService
+@inject CourseService CourseService
+@inject TeacherService TeacherService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<div class="p-3">
+    @if (!string.IsNullOrEmpty(modalErrorMessage))
+    {
+        <div class="alert alert-danger border-0 mb-3 alert-custom">
+            @modalErrorMessage
+        </div>
+    }
+
+    <EditForm Model="Timetable" OnValidSubmit="SaveEntry" FormName="TimetableDialogForm">
+        <DataAnnotationsValidator />
+
+        <div class="row g-3">
+            <!-- Course -->
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold small text-secondary">Course</label>
+                <RadzenDropDown @bind-Value="Timetable.CourseId"
+                               Data="@courses"
+                               TextProperty="DisplayName"
+                               ValueProperty="Value"
+                               AllowFiltering="true"
+                               FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                               Placeholder="Select course..."
+                               class="w-100" />
+                <ValidationMessage For="() => Timetable.CourseId" />
+            </div>
+
+            <!-- Teacher -->
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold small text-secondary">Teacher</label>
+                <RadzenDropDown @bind-Value="Timetable.TeacherId"
+                               Data="@teachers"
+                               TextProperty="DisplayName"
+                               ValueProperty="Value"
+                               AllowFiltering="true"
+                               FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                               Placeholder="Select teacher..."
+                               class="w-100" />
+                <ValidationMessage For="() => Timetable.TeacherId" />
+            </div>
+
+            <!-- Day of Week -->
+            <div class="col-12 col-md-4">
+                <label class="form-label fw-semibold small text-secondary">Day of Week</label>
+                <RadzenDropDown @bind-Value="Timetable.DayOfWeek"
+                               Data="@days"
+                               TextProperty="DisplayName"
+                               ValueProperty="Value"
+                               class="w-100" />
+            </div>
+
+            <!-- Start Time -->
+            <div class="col-6 col-md-4">
+                <label class="form-label fw-semibold small text-secondary">Start Time</label>
+                <RadzenDatePicker @bind-Value="startTimeValue" ShowTime="true" TimeOnly="true" HourFormat="12" DateFormat="hh:mm tt" class="w-100" />
+            </div>
+
+            <!-- End Time -->
+            <div class="col-6 col-md-4">
+                <label class="form-label fw-semibold small text-secondary">End Time</label>
+                <RadzenDatePicker @bind-Value="endTimeValue" ShowTime="true" TimeOnly="true" HourFormat="12" DateFormat="hh:mm tt" class="w-100" />
+            </div>
+
+            <!-- Room Number -->
+            <div class="col-12 col-md-4">
+                <label class="form-label fw-semibold small text-secondary">Room Number</label>
+                <RadzenTextBox @bind-Value="Timetable.RoomNumber" Placeholder="e.g. Science Hall 101" class="w-100" />
+                <ValidationMessage For="() => Timetable.RoomNumber" />
+            </div>
+
+            <!-- Semester -->
+            <div class="col-6 col-md-4">
+                <label class="form-label fw-semibold small text-secondary">Semester</label>
+                <RadzenTextBox @bind-Value="Timetable.Semester" Placeholder="e.g. Fall" class="w-100" />
+                <ValidationMessage For="() => Timetable.Semester" />
+            </div>
+
+            <!-- Academic Year -->
+            <div class="col-6 col-md-4">
+                <label class="form-label fw-semibold small text-secondary">Academic Year</label>
+                <RadzenTextBox @bind-Value="Timetable.AcademicYear" Placeholder="e.g. 2026-2027" class="w-100" />
+                <ValidationMessage For="() => Timetable.AcademicYear" />
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <RadzenButton Text="Cancel" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Save Entry" Icon="save" ButtonStyle="ButtonStyle.Primary" />
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter] public Timetable Timetable { get; set; } = new();
+
+    private List<DropDownItem<int>> courses = [];
+    private List<DropDownItem<int>> teachers = [];
+    private List<DropDownItem<DayOfWeekEnum>> days = [];
+
+    private DateTime? startTimeValue;
+    private DateTime? endTimeValue;
+    private string? modalErrorMessage;
+
+    private class DropDownItem<T>
+    {
+        public T Value { get; set; } = default!;
+        public string DisplayName { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Timetable == null)
+        {
+            Timetable = new Timetable();
+        }
+
+        if (Timetable.Id == 0)
+        {
+            Timetable.StartTime = new TimeOnly(9, 0);
+            Timetable.EndTime = new TimeOnly(10, 30);
+            Timetable.DayOfWeek = DayOfWeekEnum.Monday;
+        }
+
+        startTimeValue = DateTime.Today.Add(Timetable.StartTime.ToTimeSpan());
+        endTimeValue = DateTime.Today.Add(Timetable.EndTime.ToTimeSpan());
+
+        var allCourses = await CourseService.GetAllAsync();
+        courses = allCourses.Select(c => new DropDownItem<int>
+        {
+            Value = c.Id,
+            DisplayName = $"{c.CourseCode} - {c.Name}"
+        }).ToList();
+
+        var allTeachers = await TeacherService.GetAllAsync();
+        teachers = allTeachers.Select(t => new DropDownItem<int>
+        {
+            Value = t.Id,
+            DisplayName = $"{(t.User != null ? t.User.FullName : "Unknown")} ({t.TeacherCode})"
+        }).ToList();
+
+        days = Enum.GetValues<DayOfWeekEnum>().Select(d => new DropDownItem<DayOfWeekEnum>
+        {
+            Value = d,
+            DisplayName = d.ToString()
+        }).ToList();
+    }
+
+    private async Task SaveEntry()
+    {
+        modalErrorMessage = null;
+
+        if (Timetable.CourseId == 0)
+        {
+            modalErrorMessage = "Please select a Course.";
+            return;
+        }
+
+        if (Timetable.TeacherId == 0)
+        {
+            modalErrorMessage = "Please select a Teacher.";
+            return;
+        }
+
+        if (startTimeValue == null || endTimeValue == null)
+        {
+            modalErrorMessage = "Start Time and End Time are required.";
+            return;
+        }
+
+        Timetable.StartTime = TimeOnly.FromDateTime(startTimeValue.Value);
+        Timetable.EndTime = TimeOnly.FromDateTime(endTimeValue.Value);
+
+        if (Timetable.EndTime <= Timetable.StartTime)
+        {
+            modalErrorMessage = "End time must be after start time.";
+            return;
+        }
+
+        try
+        {
+            if (Timetable.Id == 0)
+            {
+                await TimetableService.CreateAsync(Timetable);
+                NotificationService.Notify(NotificationSeverity.Success, "Created", "Timetable entry created successfully.");
+            }
+            else
+            {
+                await TimetableService.UpdateAsync(Timetable);
+                NotificationService.Notify(NotificationSeverity.Success, "Saved", "Timetable entry updated successfully.");
+            }
+
+            DialogService.Close(true);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Specifically catches the conflict warning thrown by TimetableService
+            modalErrorMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            modalErrorMessage = $"An error occurred: {ex.Message}";
+        }
+    }
+}

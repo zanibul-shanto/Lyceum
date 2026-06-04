@@ -25,6 +25,16 @@
     <RadzenComponents @rendermode="InteractiveServer" />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+    <script>
+        window.downloadFileFromBytes = (filename, contentBase64) => {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = "data:application/pdf;base64," + contentBase64;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+    </script>
 </body>
 
 </html>

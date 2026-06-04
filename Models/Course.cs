@@ -27,13 +27,25 @@ public class Course
     [Range(1, 500)]
     public int MaxCapacity { get; set; } = 30;
 
+    [StringLength(20)]
+    public string? Semester { get; set; }
+
+    [StringLength(20)]
+    public string? AcademicYear { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime? UpdatedAt { get; set; }
 
+    // Navigation
     public ICollection<CourseTeacher> CourseTeachers { get; set; } = [];
+    public ICollection<Subject> Subjects { get; set; } = [];
+    public ICollection<StudentEnrollment> Enrollments { get; set; } = [];
+    public ICollection<AttendanceSession> AttendanceSessions { get; set; } = [];
+    public ICollection<Grade> Grades { get; set; } = [];
+    public ICollection<Timetable> Timetables { get; set; } = [];
 }
 
 public class CourseTeacher
@@ -42,5 +54,7 @@ public class CourseTeacher
     public Course Course { get; set; } = null!;
 
     public int TeacherId { get; set; }
-    public User Teacher { get; set; } = null!;
+    public Teacher Teacher { get; set; } = null!;
+
+    public DateTime AssignedDate { get; set; } = DateTime.UtcNow;
 }

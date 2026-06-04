@@ -1,0 +1,200 @@
+@page "/student/courses"
+@inject StudentService StudentService
+@inject CourseService CourseService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>My Courses - Lyceum</PageTitle>
+
+<AuthorizeView Roles="Student" Context="authContext">
+    <Authorized>
+        <div class="container-fluid p-0">
+            <!-- Premium Seamless Page Header -->
+            <div class="premium-page-header mb-4">
+                <div>
+                    <h1 class="page-title-modern">My Enrolled Courses</h1>
+                    <div class="page-subtitle-modern">Manage and review your active academic courses and syllabus details</div>
+                </div>
+            </div>
+
+            @if (loading)
+            {
+                <div class="d-flex flex-column align-items-center justify-content-center py-5">
+                    <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
+                    <p class="mt-3 text-secondary fw-semibold">Loading courses...</p>
+                </div>
+            }
+            else if (courses.Count == 0)
+            {
+                <div class="dashboard-card p-5 text-center">
+                    <div class="mb-3 text-secondary" style="font-size: 3rem;">
+                        <i class="bi bi-book"></i>
+                    </div>
+                    <h4 class="fw-bold text-dark">No Enrolled Courses</h4>
+                    <p class="text-secondary">You are not currently enrolled in any active courses.</p>
+                </div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    @foreach (var item in courses)
+                    {
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <div class="dashboard-card p-4 h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <span class="badge bg-primary-subtle text-primary font-monospace px-2 py-1">
+                                            @item.Course.CourseCode
+                                        </span>
+                                        <span class="text-secondary small fw-semibold">
+                                            @item.Course.Credits Credits
+                                        </span>
+                                    </div>
+                                    <h5 class="fw-bold text-dark mb-2">@item.Course.Name</h5>
+                                    @if (!string.IsNullOrWhiteSpace(item.Course.Description))
+                                    {
+                                        <p class="text-secondary small mb-3">@item.Course.Description</p>
+                                    }
+
+                                    <div class="mb-3">
+                                        <span class="text-secondary small d-block mb-1">
+                                            <i class="bi bi-clock me-1"></i> Schedule
+                                        </span>
+                                        <span class="text-dark small fw-semibold">
+                                            @(string.IsNullOrWhiteSpace(item.Course.Schedule) ? "Not Scheduled" : item.Course.Schedule)
+                                        </span>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <span class="text-secondary small d-block mb-1">
+                                            <i class="bi bi-geo-alt me-1"></i> Room
+                                        </span>
+                                        <span class="text-dark small fw-semibold">
+                                            Room @(item.Course.RoomNo ?? "TBA")
+                                        </span>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <span class="text-secondary small d-block mb-1">
+                                            <i class="bi bi-person-badge me-1"></i> Instructor
+                                        </span>
+                                        <span class="text-dark small fw-semibold">
+                                            @(item.Course.CourseTeachers.Any()
+                                                ? string.Join(", ", item.Course.CourseTeachers.Select(ct => ct.Teacher.User.FullName))
+                                                : "No Instructor Assigned")
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 pt-3 border-top">
+                                    <h6 class="fw-bold text-dark mb-2 small">
+                                        <i class="bi bi-journal-text me-1 text-primary"></i> Syllabus topics
+                                    </h6>
+                                    @if (item.Subjects.Any())
+                                    {
+                                        <div class="syllabus-list">
+                                            @foreach (var subject in item.Subjects)
+                                            {
+                                                <div class="d-flex align-items-start mb-2 small text-secondary">
+                                                    <span class="badge bg-secondary-subtle text-secondary font-monospace me-2 text-uppercase">
+                                                        @subject.SubjectCode
+                                                    </span>
+                                                    <div>
+                                                        <div class="text-dark fw-semibold">@subject.SubjectName</div>
+                                                        @if (!string.IsNullOrWhiteSpace(subject.Description))
+                                                        {
+                                                            <div class="text-muted small">@subject.Description</div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small italic">No topics defined in the syllabus.</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="d-flex flex-column align-items-center justify-content-center portal-loading-container">
+            <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Large" />
+            <p class="mt-3 text-secondary fw-semibold">Loading Student Portal...</p>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private bool loading = true;
+    private Student? currentStudent;
+    private List<CourseDetailItem> courses = new();
+
+    public class CourseDetailItem
+    {
+        public Course Course { get; set; } = null!;
+        public List<Subject> Subjects { get; set; } = [];
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var username = authState.User.Identity?.Name;
+
+        if (!string.IsNullOrEmpty(username))
+        {
+            var userIdClaim = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+            {
+                currentStudent = await StudentService.GetByUserIdAsync(userId);
+            }
+        }
+
+        if (currentStudent != null)
+        {
+            var activeEnrollments = currentStudent.Enrollments
+                .Where(e => e.Status == EnrollmentStatus.Active)
+                .ToList();
+
+            courses = new List<CourseDetailItem>();
+            foreach (var enrollment in activeEnrollments)
+            {
+                var details = await CourseService.GetByIdAsync(enrollment.CourseId);
+                if (details != null)
+                {
+                    courses.Add(new CourseDetailItem
+                    {
+                        Course = details,
+                        Subjects = details.Subjects.ToList()
+                    });
+                }
+            }
+        }
+        loading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated != true)
+            {
+                Navigation.NavigateTo("/login");
+            }
+            else
+            {
+                var role = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                if (role != "Student")
+                {
+                    Navigation.NavigateTo("/login");
+                }
+            }
+        }
+    }
+}

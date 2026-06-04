@@ -10,6 +10,9 @@ public class CourseService(LyceumDbContext context)
         return await context.Courses
             .Include(c => c.CourseTeachers)
                 .ThenInclude(ct => ct.Teacher)
+                    .ThenInclude(t => t.User)
+            .Include(c => c.Subjects)
+            .Include(c => c.Enrollments)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
     }
@@ -19,6 +22,11 @@ public class CourseService(LyceumDbContext context)
         return await context.Courses
             .Include(c => c.CourseTeachers)
                 .ThenInclude(ct => ct.Teacher)
+                    .ThenInclude(t => t.User)
+            .Include(c => c.Subjects)
+            .Include(c => c.Enrollments)
+                .ThenInclude(e => e.Student)
+                    .ThenInclude(s => s.User)
             .FirstOrDefaultAsync(c => c.Id == id);
     }
 
@@ -57,6 +65,8 @@ public class CourseService(LyceumDbContext context)
         existing.RoomNo = course.RoomNo;
         existing.Credits = course.Credits;
         existing.MaxCapacity = course.MaxCapacity;
+        existing.Semester = course.Semester;
+        existing.AcademicYear = course.AcademicYear;
         existing.IsActive = course.IsActive;
         existing.UpdatedAt = DateTime.UtcNow;
 
@@ -86,5 +96,13 @@ public class CourseService(LyceumDbContext context)
         course.IsActive = !course.IsActive;
         course.UpdatedAt = DateTime.UtcNow;
         await context.SaveChangesAsync();
+    }
+
+    public async Task<int> GetCountAsync(bool? activeOnly = null)
+    {
+        var query = context.Courses.AsQueryable();
+        if (activeOnly.HasValue)
+            query = query.Where(c => c.IsActive == activeOnly.Value);
+        return await query.CountAsync();
     }
 }

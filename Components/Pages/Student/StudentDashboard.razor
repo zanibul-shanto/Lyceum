@@ -1,6 +1,9 @@
 @page "/student/dashboard"
 @inject UserService UserService
-@inject CustomAuthStateProvider AuthStateProvider
+@inject StudentService StudentService
+@inject AttendanceService AttendanceService
+@inject GradeService GradeService
+@inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 
 <PageTitle>Student Dashboard - Lyceum</PageTitle>
@@ -12,16 +15,16 @@
             <div class="premium-page-header">
                 <div>
                     <h1 class="page-title-modern">Dashboard</h1>
-                    <div class="page-subtitle-modern">Spring 2026</div>
+                    <div class="page-subtitle-modern">Academic Year: 2025-2026</div>
                 </div>
                 <div class="header-right-block">
                     <!-- Outlined Header Profile Card matching design -->
                     <div class="header-profile-card">
                         <div class="header-avatar-circle">
-                            @GetInitials(currentStudent?.FullName ?? "Alex Chen")
+                            @GetInitials(currentStudent?.User?.FullName ?? "Alex Chen")
                         </div>
                         <div>
-                            <div class="header-user-name">@(currentStudent?.FullName ?? "Alex Chen")</div>
+                            <div class="header-user-name">@(currentStudent?.User?.FullName ?? "Alex Chen")</div>
                             <div class="header-user-role">Student</div>
                         </div>
                     </div>
@@ -34,39 +37,43 @@
                 <div class="col-12 col-sm-6 col-lg-3">
                     <div class="kpi-card">
                         <div class="kpi-label">Enrolled Courses</div>
-                        <div class="kpi-number">3</div>
+                        <div class="kpi-number">@enrolledCoursesCount</div>
                         <div class="kpi-footer text-secondary">
-                            <span class="badge-spring-kpi">Spring</span> 2026
+                            Active enrollments
                         </div>
                     </div>
                 </div>
 
-                <!-- Assignments Due -->
+                <!-- Enrolled Credits -->
                 <div class="col-12 col-sm-6 col-lg-3">
                     <div class="kpi-card">
-                        <div class="kpi-label">Assignments Due</div>
-                        <div class="kpi-number">3</div>
-                        <div class="kpi-footer text-secondary">This week</div>
+                        <div class="kpi-label">Enrolled Credits</div>
+                        <div class="kpi-number">@enrolledCreditsCount</div>
+                        <div class="kpi-footer text-secondary">
+                            Semester total
+                        </div>
                     </div>
                 </div>
 
                 <!-- Current GPA -->
                 <div class="col-12 col-sm-6 col-lg-3">
                     <div class="kpi-card">
-                        <div class="kpi-label">Current GPA</div>
-                        <div class="kpi-number">@(currentStudent?.GPA?.ToString("0.0") ?? "3.7")</div>
+                        <div class="kpi-label">Cumulative GPA</div>
+                        <div class="kpi-number">@gpa.ToString("0.00")</div>
                         <div class="kpi-footer text-secondary">
-                            <span class="text-success fw-bold">&uarr;</span> from last term
+                            Out of 4.00
                         </div>
                     </div>
                 </div>
 
-                <!-- Credits Earned -->
+                <!-- Overall Attendance -->
                 <div class="col-12 col-sm-6 col-lg-3">
                     <div class="kpi-card">
-                        <div class="kpi-label">Credits Earned</div>
-                        <div class="kpi-number">42</div>
-                        <div class="kpi-footer text-secondary">of 120 required</div>
+                        <div class="kpi-label">Attendance Rate</div>
+                        <div class="kpi-number">@attendancePercentage.ToString("0.1")%</div>
+                        <div class="kpi-footer text-secondary">
+                            Overall presence
+                        </div>
                     </div>
                 </div>
             </div>
@@ -75,39 +82,55 @@
             <h5 class="fw-bold mb-3 mt-4 text-dark font-outfit">Academic Progress</h5>
             <div class="row g-4 mb-4">
                 <div class="col-12 col-lg-8">
-                    <div class="row g-3">
-                        @foreach (var course in mockCourses)
-                        {
-                            <div class="col-12 col-md-6">
-                                <div class="course-card-modern h-100 course-card-min-height">
-                                    <div>
-                                        <div class="course-code-modern">@course.Code</div>
-                                        <h6 class="course-title-modern">@course.Title</h6>
-                                    </div>
-                                    <div>
-                                        <div class="course-progress-header">
-                                            <span>Progress</span>
-                                            <span>@course.Progress%</span>
+                    @if (studentCourses.Count > 0)
+                    {
+                        <div class="row g-3">
+                            @foreach (var course in studentCourses)
+                            {
+                                <div class="col-12 col-md-6">
+                                    <div class="course-card-modern h-100 course-card-min-height">
+                                        <div>
+                                            <div class="course-code-modern">@course.Code</div>
+                                            <h6 class="course-title-modern">@course.Title</h6>
                                         </div>
-                                        <div class="course-progress-bar-container">
-                                            <div class="course-progress-bar-fill" style="width: @course.Progress%;"></div>
-                                        </div>
-                                        <div class="course-footer-modern">
-                                            Next: @course.NextTask
+                                        <div>
+                                            <div class="course-progress-header">
+                                                <span>Attendance Progress</span>
+                                                <span>@course.Progress.ToString("0.0")%</span>
+                                            </div>
+                                            <div class="course-progress-bar-container">
+                                                <div class="course-progress-bar-fill" style="width: @course.Progress%;"></div>
+                                            </div>
+                                            <div class="course-footer-modern">
+                                                @course.NextTask
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        }
-                    </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="dashboard-card p-4 text-center">
+                            <p class="text-secondary mb-0">You are not enrolled in any courses.</p>
+                        </div>
+                    }
                 </div>
                 <div class="col-12 col-lg-4">
                     <div class="dashboard-card p-4 h-100">
-                        <h5 class="fw-bold mb-3 text-dark tracker-title">Progress Tracker</h5>
-                        <RadzenChart class="student-progress-chart">
-                            <RadzenBarSeries Data="@mockCourses" CategoryProperty="Code" ValueProperty="Progress" Title="Progress %" />
-                            <RadzenValueAxis Min="0" Max="100" Step="20" />
-                        </RadzenChart>
+                        <h5 class="fw-bold mb-3 text-dark tracker-title">Progress Tracker (Attendance %)</h5>
+                        @if (studentCourses.Count > 0)
+                        {
+                            <RadzenChart class="student-progress-chart">
+                                <RadzenBarSeries Data="@studentCourses" CategoryProperty="Code" ValueProperty="Progress" Title="Attendance %" />
+                                <RadzenValueAxis Min="0" Max="100" Step="20" />
+                            </RadzenChart>
+                        }
+                        else
+                        {
+                            <p class="text-secondary small mb-0">No progress data to display.</p>
+                        }
                     </div>
                 </div>
             </div>
@@ -118,28 +141,32 @@
                     <h5 class="grades-card-title m-0">Recent Grades</h5>
                     <a href="student/grades" class="grades-card-link text-decoration-none">View all <i class="bi bi-arrow-right"></i></a>
                 </div>
-                <RadzenDataGrid Data="@recentGrades" TItem="MockGrade" GridLines="DataGridGridLines.Horizontal">
-                    <Columns>
-                        <RadzenDataGridColumn TItem="MockGrade" Property="Course" Title="Course" Width="110px" />
-                        <RadzenDataGridColumn TItem="MockGrade" Property="Assignment" Title="Assignment" />
-                        <RadzenDataGridColumn TItem="MockGrade" Property="Score" Title="Score" Width="100px" TextAlign="TextAlign.Center" />
-                        <RadzenDataGridColumn TItem="MockGrade" Title="Grade" Width="90px" TextAlign="TextAlign.Center">
-                            <Template Context="grade">
-                                <span class="badge-grade-modern @GetGradeClass(grade.Grade)">
-                                    @grade.Grade
-                                </span>
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="MockGrade" Property="Submitted" Title="Submitted" Width="120px" />
-                        <RadzenDataGridColumn TItem="MockGrade" Title="Status" Width="110px" TextAlign="TextAlign.Center">
-                            <Template Context="grade">
-                                <span class="badge-status-modern @GetStatusClass(grade.Status)">
-                                    @grade.Status
-                                </span>
-                            </Template>
-                        </RadzenDataGridColumn>
-                    </Columns>
-                </RadzenDataGrid>
+                @if (recentGrades.Count > 0)
+                {
+                    <RadzenDataGrid Data="@recentGrades" TItem="Grade" GridLines="DataGridGridLines.Horizontal">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="Grade" Property="Course.CourseCode" Title="Course Code" Width="120px" />
+                            <RadzenDataGridColumn TItem="Grade" Property="Course.Name" Title="Course Name" />
+                            <RadzenDataGridColumn TItem="Grade" Property="TotalMarks" Title="Total Marks" Width="120px" TextAlign="TextAlign.Center" />
+                            <RadzenDataGridColumn TItem="Grade" Title="Letter Grade" Width="120px" TextAlign="TextAlign.Center">
+                                <Template Context="grade">
+                                    <span class="badge-grade-modern @GetGradeClass(grade.LetterGrade ?? "F")">
+                                        @(grade.LetterGrade ?? "F")
+                                    </span>
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="Grade" Title="Date" Width="140px">
+                                <Template Context="grade">
+                                    @((grade.UpdatedAt ?? grade.EnteredAt).ToLocalTime().ToString("MMM dd, yyyy"))
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                }
+                else
+                {
+                    <p class="text-secondary mb-0">No grade records found.</p>
+                }
             </div>
         </div>
     </Authorized>
@@ -154,9 +181,13 @@
 </AuthorizeView>
 
 @code {
-    private User? currentStudent;
-    private List<MockCourse> mockCourses = new();
-    private List<MockGrade> recentGrades = new();
+    private Student? currentStudent;
+    private int enrolledCoursesCount;
+    private int enrolledCreditsCount;
+    private double gpa;
+    private double attendancePercentage = 100.0;
+    private List<CourseProgressItem> studentCourses = new();
+    private List<Grade> recentGrades = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -165,19 +196,35 @@
 
         if (!string.IsNullOrEmpty(username))
         {
-            var allUsers = await UserService.GetAllUsersAsync();
-            currentStudent = allUsers.FirstOrDefault(u => u.Username.ToLower() == username.ToLower());
+            // Get Student by user ID from claim or username
+            var userIdClaim = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+            {
+                currentStudent = await StudentService.GetByUserIdAsync(userId);
+            }
         }
 
-        currentStudent ??= new User
+        if (currentStudent != null)
         {
-            FullName = "Alex Chen",
-            GPA = 3.7,
-            Role = UserRole.Student
-        };
+            var activeEnrollments = currentStudent.Enrollments.Where(e => e.Status == EnrollmentStatus.Active).ToList();
+            enrolledCoursesCount = activeEnrollments.Count;
+            enrolledCreditsCount = activeEnrollments.Sum(e => e.Course.Credits);
+            gpa = await GradeService.CalculateGPAAsync(currentStudent.Id);
+            attendancePercentage = await AttendanceService.GetOverallAttendancePercentageAsync(currentStudent.Id);
 
-        LoadMockCourses();
-        LoadRecentGrades();
+            var courseAttendance = await AttendanceService.GetAttendancePercentageByCoursesAsync(currentStudent.Id);
+            studentCourses = activeEnrollments
+                .Select(e => new CourseProgressItem
+                {
+                    Code = e.Course.CourseCode,
+                    Title = e.Course.Name,
+                    Progress = courseAttendance.TryGetValue(e.CourseId, out var rate) ? rate : 100.0,
+                    NextTask = $"Room: {e.Course.RoomNo} | Schedule: {e.Course.Schedule}"
+                })
+                .ToList();
+
+            recentGrades = await GradeService.GetByStudentAsync(currentStudent.Id);
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -200,28 +247,6 @@
         }
     }
 
-    private void LoadMockCourses()
-    {
-        mockCourses = new List<MockCourse>
-        {
-            new("Intro to Computer Science", "CS 101", 72, "Lab 4 — due May 24"),
-            new("Linear Algebra", "MATH 201", 55, "Next: Problem Set 5 — due May 26"),
-            new("Technical Writing", "ENG 110", 40, "Next: Essay Draft — due May 28")
-        };
-    }
-
-    private void LoadRecentGrades()
-    {
-        recentGrades = new List<MockGrade>
-        {
-            new("CS 101", "Midterm Exam", "91 / 100", "A", "May 10", "graded"),
-            new("MATH 201", "Problem Set 4", "78 / 100", "B+", "May 8", "graded"),
-            new("ENG 110", "Essay Draft", "—", "—", "May 15", "pending"),
-            new("CS 101", "Lab 3", "88 / 100", "B+", "May 5", "graded"),
-            new("PHYS 101", "Quiz 5", "72 / 100", "C+", "May 3", "graded")
-        };
-    }
-
     private string GetInitials(string fullName)
     {
         if (string.IsNullOrWhiteSpace(fullName)) return "AC";
@@ -240,17 +265,4 @@
             _ => "badge-grade-pending"
         };
     }
-
-    private string GetStatusClass(string status)
-    {
-        return status.Trim().ToLower() switch
-        {
-            "graded" => "badge-status-graded",
-            "pending" => "badge-status-pending",
-            _ => "badge-status-pending"
-        };
-    }
-
-    public record MockCourse(string Title, string Code, int Progress, string NextTask);
-    public record MockGrade(string Course, string Assignment, string Score, string Grade, string Submitted, string Status);
 }

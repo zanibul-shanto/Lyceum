@@ -1,0 +1,204 @@
+@page "/admin/settings"
+@inject SystemSettingService SystemSettingService
+@inject UserService UserService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>System Settings - Lyceum</PageTitle>
+
+<AuthorizeView Roles="Admin" Context="authContext">
+    <Authorized>
+        <div class="container-fluid py-4 px-xl-5">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="fw-bold mb-1 page-title-modern">System Settings</h1>
+                    <p class="page-subtitle-modern">Configure institution-wide variables, academic terms, and grading scales.</p>
+                </div>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="d-flex justify-content-center my-5">
+                    <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
+                </div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    <!-- General Settings -->
+                    <div class="col-12 col-lg-6">
+                        <div class="dashboard-card p-4 h-100">
+                            <h4 class="fw-bold text-dark mb-4 section-title-medium">Academic Configuration</h4>
+                            
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold small text-secondary font-outfit">Academic Year</label>
+                                <RadzenTextBox @bind-Value="academicYear" Placeholder="e.g. 2026-2027" class="w-100" />
+                                <div class="text-secondary small mt-1">Specify the current active academic year term.</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold small text-secondary font-outfit">Current Semester</label>
+                                <RadzenDropDown TValue="string" Data="@semesterOptions" @bind-Value="currentSemester" class="w-100" />
+                                <div class="text-secondary small mt-1">Select the active academic semester.</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold small text-secondary font-outfit">Institution Name</label>
+                                <RadzenTextBox @bind-Value="institutionName" Placeholder="e.g. Lyceum University" class="w-100" />
+                                <div class="text-secondary small mt-1">Global name displayed in reports and branding.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Grading Scale Configuration -->
+                    <div class="col-12 col-lg-6">
+                        <div class="dashboard-card p-4 h-100">
+                            <h4 class="fw-bold text-dark mb-4 section-title-medium">Grading Scale Thresholds</h4>
+                            <p class="text-secondary small mb-3">Define percentage ranges and GPA points mapping for letter grades.</p>
+
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-dark-theme-compatible align-middle m-0">
+                                    <thead>
+                                        <tr>
+                                            <th class="fw-bold text-secondary small py-2">Grade</th>
+                                            <th class="fw-bold text-secondary small py-2">Min (%)</th>
+                                            <th class="fw-bold text-secondary small py-2">Max (%)</th>
+                                            <th class="fw-bold text-secondary small py-2">GPA</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var key in gradeKeys)
+                                        {
+                                            if (gradingScale.TryGetValue(key, out var threshold))
+                                            {
+                                                <tr>
+                                                    <td class="fw-bold text-primary">@key</td>
+                                                    <td>
+                                                        <RadzenNumeric TValue="int" @bind-Value="threshold.min" Min="0" Max="100" class="w-100" />
+                                                    </td>
+                                                    <td>
+                                                        <RadzenNumeric TValue="int" @bind-Value="threshold.max" Min="0" Max="100" class="w-100" />
+                                                    </td>
+                                                    <td>
+                                                        <RadzenNumeric TValue="double" @bind-Value="threshold.gpa" Min="@(0M)" Max="@(4M)" Step="0.1" Format="0.0" class="w-100" />
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="col-12 text-end">
+                        <RadzenButton Text="Save Settings" Icon="save" Click="SaveAllSettings" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Medium" />
+                    </div>
+                </div>
+            }
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="d-flex flex-column align-items-center justify-content-center portal-loading-container">
+            <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate"
+                                       Size="ProgressBarCircularSize.Large" />
+            <p class="mt-3 text-secondary fw-semibold">Loading Settings Portal...</p>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private bool isLoading = true;
+    private string academicYear = "2026-2027";
+    private string currentSemester = "Fall";
+    private string institutionName = "Lyceum University";
+
+    private Dictionary<string, GradeThreshold> gradingScale = [];
+
+    private readonly List<string> semesterOptions = ["Fall", "Spring", "Summer"];
+    private readonly List<string> gradeKeys = ["A", "B", "C", "D", "F"];
+    
+    private int? currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var username = authState.User.Identity?.Name;
+            if (!string.IsNullOrEmpty(username))
+            {
+                var allUsers = await UserService.GetAllUsersAsync();
+                var user = allUsers.FirstOrDefault(u => u.Username.ToLower() == username.ToLower());
+                currentUserId = user?.Id;
+            }
+
+            academicYear = await SystemSettingService.GetAsync("AcademicYear") ?? "2026-2027";
+            currentSemester = await SystemSettingService.GetAsync("CurrentSemester") ?? "Fall";
+            institutionName = await SystemSettingService.GetAsync("InstitutionName") ?? "Lyceum University";
+
+            var scale = await SystemSettingService.GetGradingScaleAsync();
+            if (scale != null)
+            {
+                gradingScale = scale;
+            }
+            else
+            {
+                gradingScale = new Dictionary<string, GradeThreshold>
+                {
+                    { "A", new GradeThreshold { min = 90, max = 100, gpa = 4.0 } },
+                    { "B", new GradeThreshold { min = 80, max = 89, gpa = 3.0 } },
+                    { "C", new GradeThreshold { min = 70, max = 79, gpa = 2.0 } },
+                    { "D", new GradeThreshold { min = 60, max = 69, gpa = 1.0 } },
+                    { "F", new GradeThreshold { min = 0, max = 59, gpa = 0.0 } }
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Failed to load settings: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated != true)
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+            var role = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            if (role != "Admin")
+                Navigation.NavigateTo("/login");
+        }
+    }
+
+    private async Task SaveAllSettings()
+    {
+        try
+        {
+            await SystemSettingService.SetAsync("AcademicYear", academicYear, currentUserId);
+            await SystemSettingService.SetAsync("CurrentSemester", currentSemester, currentUserId);
+            await SystemSettingService.SetAsync("InstitutionName", institutionName, currentUserId);
+            
+            await SystemSettingService.SaveGradingScaleAsync(gradingScale, currentUserId);
+
+            NotificationService.Notify(NotificationSeverity.Success, "Saved", "System configuration saved successfully.");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Could not save settings: {ex.Message}");
+        }
+    }
+}

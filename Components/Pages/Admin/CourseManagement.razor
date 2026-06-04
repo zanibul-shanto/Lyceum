@@ -1,7 +1,7 @@
 @page "/admin/courses"
 @inject CourseService CourseService
 @inject UserService UserService
-@inject CustomAuthStateProvider AuthStateProvider
+@inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 @inject NotificationService NotificationService
 @inject DialogService DialogService
@@ -129,7 +129,7 @@
                                     <div class="d-flex flex-wrap gap-1">
                                         @foreach (var ct in course.CourseTeachers.Take(2))
                                         {
-                                            <span class="badge-role badge-teacher">@ct.Teacher.FullName</span>
+                                            <span class="badge-role badge-teacher">@ct.Teacher.User?.FullName</span>
                                         }
                                         @if (course.CourseTeachers.Count > 2)
                                         {

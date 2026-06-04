@@ -1,0 +1,325 @@
+@page "/admin/audit-logs"
+@using System.Text.Json
+@inject AuditLogService AuditLogService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Audit Logs - Lyceum</PageTitle>
+
+<AuthorizeView Roles="Admin" Context="authContext">
+    <Authorized>
+        <div class="container-fluid py-4 px-xl-5">
+            <!-- Header Section -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="fw-bold mb-1 page-title-modern">System Audit Logs</h1>
+                    <p class="page-subtitle-modern">Track, filter, and audit database operations and administrative activities.</p>
+                </div>
+            </div>
+
+            <!-- Filters Card -->
+            <div class="dashboard-card p-4 mb-4">
+                <h5 class="fw-bold text-dark mb-3">Filter Logs</h5>
+                <div class="row g-3 align-items-end">
+                    <!-- User Role -->
+                    <div class="col-12 col-sm-6 col-md-3">
+                        <label class="form-label fw-semibold small text-secondary">User Role</label>
+                        <RadzenDropDown TValue="string" Data="@roleOptions" @bind-Value="selectedRole" Change="OnFilterChange" class="w-100" />
+                    </div>
+
+                    <!-- Action Type -->
+                    <div class="col-12 col-sm-6 col-md-3">
+                        <label class="form-label fw-semibold small text-secondary">Action Type</label>
+                        <RadzenDropDown TValue="AuditAction?" Data="@actionOptions" @bind-Value="selectedAction" 
+                                        TextProperty="DisplayName" ValueProperty="Value" Change="OnFilterChange" class="w-100" />
+                    </div>
+
+                    <!-- Date From -->
+                    <div class="col-6 col-md-2">
+                        <label class="form-label fw-semibold small text-secondary">Date From</label>
+                        <RadzenDatePicker @bind-Value="selectedDateFrom" Placeholder="Select date..." DateFormat="yyyy-MM-dd" Change="OnFilterChange" class="w-100" />
+                    </div>
+
+                    <!-- Date To -->
+                    <div class="col-6 col-md-2">
+                        <label class="form-label fw-semibold small text-secondary">Date To</label>
+                        <RadzenDatePicker @bind-Value="selectedDateTo" Placeholder="Select date..." DateFormat="yyyy-MM-dd" Change="OnFilterChange" class="w-100" />
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="col-12 col-md-2">
+                        <RadzenButton Text="Reset Filters" Icon="restart_alt" Click="ResetFilters" 
+                                      ButtonStyle="ButtonStyle.Light" class="w-100" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid Card -->
+            <div class="dashboard-card p-4 mb-4">
+                <RadzenDataGrid @ref="grid" Data="@logs" Count="@totalCount" TItem="AuditLog" LoadData="@LoadData"
+                                AllowPaging="true" PageSize="15" IsLoading="@isLoading"
+                                AllowSorting="false" GridLines="DataGridGridLines.Horizontal">
+                    <Columns>
+                        <!-- Timestamp -->
+                        <RadzenDataGridColumn TItem="AuditLog" Title="Timestamp" Width="170px">
+                            <Template Context="log">
+                                <span class="text-secondary small font-monospace">@log.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</span>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <!-- User -->
+                        <RadzenDataGridColumn TItem="AuditLog" Title="User" Width="200px">
+                            <Template Context="log">
+                                @if (log.User != null)
+                                {
+                                    <div class="fw-semibold text-dark">@log.User.FullName</div>
+                                    <div class="text-secondary small">@@@log.User.Username</div>
+                                }
+                                else
+                                {
+                                    <span class="text-secondary italic">System / Guest</span>
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <!-- Role -->
+                        <RadzenDataGridColumn TItem="AuditLog" Title="Role" Width="100px">
+                            <Template Context="log">
+                                @if (string.Equals(log.UserRole, "Admin", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <span class="badge bg-danger-subtle text-danger">Admin</span>
+                                }
+                                else if (string.Equals(log.UserRole, "Teacher", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <span class="badge bg-warning-subtle text-warning">Teacher</span>
+                                }
+                                else if (string.Equals(log.UserRole, "Student", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <span class="badge bg-primary-subtle text-primary">Student</span>
+                                }
+                                else if (!string.IsNullOrEmpty(log.UserRole))
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary">@log.UserRole</span>
+                                }
+                                else
+                                {
+                                    <span class="text-secondary">—</span>
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <!-- Action -->
+                        <RadzenDataGridColumn TItem="AuditLog" Title="Action" Width="110px">
+                            <Template Context="log">
+                                @switch (log.Action)
+                                {
+                                    case AuditAction.Create:
+                                        <span class="badge bg-success text-white">CREATE</span>
+                                        break;
+                                    case AuditAction.Update:
+                                        <span class="badge bg-info text-dark">UPDATE</span>
+                                        break;
+                                    case AuditAction.Delete:
+                                        <span class="badge bg-danger text-white">DELETE</span>
+                                        break;
+                                    case AuditAction.Login:
+                                        <span class="badge bg-secondary text-white">LOGIN</span>
+                                        break;
+                                    default:
+                                        <span class="badge bg-secondary text-white">@log.Action</span>
+                                        break;
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <!-- Entity -->
+                        <RadzenDataGridColumn TItem="AuditLog" Title="Entity" Width="130px">
+                            <Template Context="log">
+                                <span class="fw-semibold text-dark">@log.EntityName</span>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <!-- Entity ID -->
+                        <RadzenDataGridColumn TItem="AuditLog" Title="Entity ID" Width="100px">
+                            <Template Context="log">
+                                <span class="text-secondary font-monospace small">@log.EntityId</span>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <!-- Values/Details -->
+                        <RadzenDataGridColumn TItem="AuditLog" Title="Changes" Sortable="false">
+                            <Template Context="log">
+                                <div class="d-flex align-items-center justify-content-between gap-2">
+                                    <span class="text-secondary small text-truncate" style="max-width: 250px;">
+                                        @if (!string.IsNullOrEmpty(log.NewValue))
+                                        {
+                                            @log.NewValue
+                                        }
+                                        else if (!string.IsNullOrEmpty(log.OldValue))
+                                        {
+                                            @log.OldValue
+                                        }
+                                        else
+                                        {
+                                            <span class="text-secondary italic">—</span>
+                                        }
+                                    </span>
+                                    <RadzenButton Icon="visibility" Text="Inspect" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall"
+                                                  Click="@(() => ShowDetails(log))" />
+                                </div>
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="d-flex flex-column align-items-center justify-content-center portal-loading-container">
+            <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate"
+                                       Size="ProgressBarCircularSize.Large" />
+            <p class="mt-3 text-secondary fw-semibold">Loading Admin Portal...</p>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private RadzenDataGrid<AuditLog>? grid;
+    private List<AuditLog> logs = [];
+    private int totalCount;
+    private bool isLoading;
+
+    private string selectedRole = "All";
+    private AuditAction? selectedAction;
+    private DateTime? selectedDateFrom;
+    private DateTime? selectedDateTo;
+
+    private readonly List<string> roleOptions = ["All", "Admin", "Teacher", "Student"];
+    private List<ActionDropdownItem> actionOptions = [];
+
+    private class ActionDropdownItem
+    {
+        public AuditAction? Value { get; set; }
+        public string DisplayName { get; set; } = string.Empty;
+    }
+
+    protected override void OnInitialized()
+    {
+        actionOptions = new List<ActionDropdownItem>
+        {
+            new() { Value = null, DisplayName = "All" },
+            new() { Value = AuditAction.Create, DisplayName = "Create" },
+            new() { Value = AuditAction.Update, DisplayName = "Update" },
+            new() { Value = AuditAction.Delete, DisplayName = "Delete" },
+            new() { Value = AuditAction.Login, DisplayName = "Login" }
+        };
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated != true)
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+            var role = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            if (role != "Admin")
+                Navigation.NavigateTo("/login");
+        }
+    }
+
+    private async Task LoadData(LoadDataArgs args)
+    {
+        isLoading = true;
+        try
+        {
+            var page = ((args.Skip ?? 0) / (args.Top ?? 15)) + 1;
+            var pageSize = args.Top ?? 15;
+
+            var result = await AuditLogService.GetLogsAsync(
+                userFilter: null,
+                dateFrom: selectedDateFrom,
+                dateTo: selectedDateTo,
+                actionFilter: selectedAction,
+                entityFilter: null,
+                roleFilter: string.Equals(selectedRole, "All", StringComparison.OrdinalIgnoreCase) ? null : selectedRole,
+                page: page,
+                pageSize: pageSize
+            );
+
+            logs = result.Logs;
+            totalCount = result.TotalCount;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Failed to load logs: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task OnFilterChange()
+    {
+        if (grid != null)
+        {
+            await grid.FirstPage();
+        }
+    }
+
+    private async Task ResetFilters()
+    {
+        selectedRole = "All";
+        selectedAction = null;
+        selectedDateFrom = null;
+        selectedDateTo = null;
+        if (grid != null)
+        {
+            await grid.FirstPage();
+        }
+    }
+
+    private void ShowDetails(AuditLog log)
+    {
+        DialogService.Open($"Audit Log #{log.Id} Details", ds => 
+            @<div class="p-3">
+                <div class="mb-3">
+                    <strong>Entity Type:</strong> @log.EntityName <br />
+                    <strong>Record ID:</strong> @log.EntityId
+                </div>
+                <div class="row">
+                    <div class="col-12 col-md-6 mb-3">
+                        <div class="fw-bold mb-1 small text-secondary">Old State (JSON)</div>
+                        <pre class="bg-dark text-light p-3 rounded font-monospace" style="max-height: 320px; overflow-y: auto; white-space: pre-wrap; font-size: 0.8rem; border: 1px solid #333;">@FormatJson(log.OldValue)</pre>
+                    </div>
+                    <div class="col-12 col-md-6 mb-3">
+                        <div class="fw-bold mb-1 small text-secondary">New State (JSON)</div>
+                        <pre class="bg-dark text-light p-3 rounded font-monospace" style="max-height: 320px; overflow-y: auto; white-space: pre-wrap; font-size: 0.8rem; border: 1px solid #333;">@FormatJson(log.NewValue)</pre>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end mt-2">
+                    <RadzenButton Text="Close" Click="() => ds.Close()" ButtonStyle="ButtonStyle.Secondary" />
+                </div>
+            </div>, new DialogOptions { Width = "780px", CloseDialogOnOverlayClick = true });
+    }
+
+    private string FormatJson(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return "No data recorded.";
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            return JsonSerializer.Serialize(doc, new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch
+        {
+            return json;
+        }
+    }
+}

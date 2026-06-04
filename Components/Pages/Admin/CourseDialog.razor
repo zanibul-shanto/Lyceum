@@ -1,5 +1,5 @@
 @inject CourseService CourseService
-@inject UserService UserService
+@inject TeacherService TeacherService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 
@@ -64,14 +64,14 @@
 
             <div class="col-12">
                 <label class="form-label fw-semibold small text-secondary">Assign Teachers</label>
-                @if (!allTeachers.Any())
+                @if (!dropdownTeachers.Any())
                 {
                     <p class="text-secondary small mb-0">No teachers found. Add teacher accounts first.</p>
                 }
                 else
                 {
                     <RadzenDropDown @bind-Value="localTeacherIds"
-                                   Data="@allTeachers"
+                                   Data="@dropdownTeachers"
                                    TextProperty="FullName"
                                    ValueProperty="Id"
                                    Multiple="true"
@@ -94,13 +94,25 @@
     [Parameter] public Course Course { get; set; } = new();
     [Parameter] public IEnumerable<int> SelectedTeacherIds { get; set; } = Enumerable.Empty<int>();
 
-    private List<User> allTeachers = [];
+    private List<TeacherDropdownItem> dropdownTeachers = [];
     private IEnumerable<int> localTeacherIds = Enumerable.Empty<int>();
     private string? modalError;
 
+    public class TeacherDropdownItem
+    {
+        public int Id { get; set; }
+        public string FullName { get; set; } = string.Empty;
+    }
+
     protected override async Task OnInitializedAsync()
     {
-        allTeachers = await UserService.GetUsersByRoleAsync(UserRole.Teacher);
+        var teachers = await TeacherService.GetAllAsync();
+        dropdownTeachers = teachers.Select(t => new TeacherDropdownItem
+        {
+            Id = t.Id,
+            FullName = $"{t.User.FullName} ({t.TeacherCode})"
+        }).ToList();
+        
         localTeacherIds = SelectedTeacherIds.ToList();
     }
 

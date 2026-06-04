@@ -1,0 +1,256 @@
+@page "/admin/timetable"
+@inject TimetableService TimetableService
+@inject CourseService CourseService
+@inject TeacherService TeacherService
+@inject SystemSettingService SystemSettingService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Timetable Management - Lyceum</PageTitle>
+
+<AuthorizeView Roles="Admin" Context="authContext">
+    <Authorized>
+        <div class="container-fluid py-4 px-xl-5">
+            <!-- Header Section -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="fw-bold mb-1 page-title-modern">Weekly Timetable Planner</h1>
+                    <p class="page-subtitle-modern">Schedule class times, rooms, and teacher assignments across semesters.</p>
+                </div>
+                <RadzenButton Text="Add Entry" Icon="add_circle" Click="ShowAddDialog"
+                              ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Medium" />
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="dashboard-card p-3 mb-4">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-secondary small fw-semibold text-uppercase">Filters:</span>
+                        
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="small text-secondary">Semester:</span>
+                            <RadzenDropDown TValue="string" Data="@semesters" @bind-Value="selectedSemester" Change="FilterChanged" class="role-dropdown" />
+                        </div>
+
+                        <div class="d-flex align-items-center gap-1 ms-3">
+                            <span class="small text-secondary">Academic Year:</span>
+                            <RadzenDropDown TValue="string" Data="@academicYears" @bind-Value="selectedAcademicYear" Change="FilterChanged" class="role-dropdown" />
+                        </div>
+                    </div>
+
+                    <div class="small text-secondary">
+                        Showing timetable for <strong>@selectedSemester</strong> (@selectedAcademicYear)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div class="row g-3">
+                @foreach (var day in DaysToDisplay)
+                {
+                    var entriesForDay = timetableEntries
+                        .Where(t => t.DayOfWeek == day)
+                        .OrderBy(t => t.StartTime)
+                        .ToList();
+
+                    <div class="col-12 col-xl">
+                        <div class="dashboard-card h-100 p-3" style="min-height: 400px;">
+                            <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                                <h5 class="fw-bold mb-0 text-primary">@day.ToString()</h5>
+                                <span class="badge bg-secondary-subtle text-secondary">@entriesForDay.Count classes</span>
+                            </div>
+
+                            <div class="d-flex flex-column gap-3">
+                                @if (!entriesForDay.Any())
+                                {
+                                    <div class="text-center py-5 text-secondary small italic">
+                                        No classes scheduled
+                                    </div>
+                                }
+                                else
+                                {
+                                    @foreach (var entry in entriesForDay)
+                                    {
+                                        <div class="timetable-slot-card p-3 border rounded-3 bg-light shadow-sm">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <span class="font-monospace fw-semibold text-primary small">
+                                                    @entry.Course?.CourseCode
+                                                </span>
+                                                <div class="d-flex gap-1">
+                                                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall" 
+                                                                  Click="@(() => ShowEditDialog(entry))" title="Edit entry" />
+                                                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall" 
+                                                                  Click="@(() => ConfirmDelete(entry))" title="Delete entry" />
+                                                </div>
+                                            </div>
+                                            <div class="fw-bold text-dark small mb-1">
+                                                @entry.Course?.Name
+                                            </div>
+                                            <div class="text-secondary small mb-1" style="font-size: 0.8rem;">
+                                                <i class="bi bi-person-workspace me-1"></i> @(entry.Teacher?.User != null ? entry.Teacher.User.FullName : "Unknown Teacher")
+                                            </div>
+                                            <div class="text-secondary small mb-1" style="font-size: 0.8rem;">
+                                                <i class="bi bi-geo-alt-fill me-1"></i> @(string.IsNullOrWhiteSpace(entry.RoomNumber) ? "No Room Assigned" : entry.RoomNumber)
+                                            </div>
+                                            <div class="d-flex align-items-center gap-1 mt-2 text-dark fw-semibold small">
+                                                <i class="bi bi-clock-fill text-primary"></i>
+                                                <span>@entry.StartTime.ToString("h:mm tt") - @entry.EndTime.ToString("h:mm tt")</span>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="d-flex flex-column align-items-center justify-content-center portal-loading-container">
+            <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate"
+                                       Size="ProgressBarCircularSize.Large" />
+            <p class="mt-3 text-secondary fw-semibold">Loading Admin Portal...</p>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private List<Timetable> timetableEntries = [];
+    private List<string> semesters = [];
+    private List<string> academicYears = [];
+    private string selectedSemester = "Fall";
+    private string selectedAcademicYear = "2026-2027";
+
+    private readonly DayOfWeekEnum[] DaysToDisplay = [
+        DayOfWeekEnum.Monday,
+        DayOfWeekEnum.Tuesday,
+        DayOfWeekEnum.Wednesday,
+        DayOfWeekEnum.Thursday,
+        DayOfWeekEnum.Friday
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        selectedSemester = await SystemSettingService.GetAsync("CurrentSemester") ?? "Fall";
+        selectedAcademicYear = await SystemSettingService.GetAsync("AcademicYear") ?? "2026-2027";
+
+        var courses = await CourseService.GetAllAsync();
+        semesters = courses
+            .Select(c => c.Semester)
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s!)
+            .Distinct()
+            .ToList();
+        if (!semesters.Contains("Fall")) semesters.Add("Fall");
+        if (!semesters.Contains("Spring")) semesters.Add("Spring");
+        if (!semesters.Contains("Summer")) semesters.Add("Summer");
+
+        academicYears = courses
+            .Select(c => c.AcademicYear)
+            .Where(y => !string.IsNullOrWhiteSpace(y))
+            .Select(y => y!)
+            .Distinct()
+            .ToList();
+        if (!academicYears.Contains("2026-2027")) academicYears.Add("2026-2027");
+        if (!academicYears.Contains("2025-2026")) academicYears.Add("2025-2026");
+
+        await LoadEntriesAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated != true)
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+            var role = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            if (role != "Admin")
+                Navigation.NavigateTo("/login");
+        }
+    }
+
+    private async Task LoadEntriesAsync()
+    {
+        timetableEntries = await TimetableService.GetAllAsync(selectedSemester, selectedAcademicYear);
+    }
+
+    private async Task FilterChanged()
+    {
+        await LoadEntriesAsync();
+    }
+
+    private async Task ShowAddDialog()
+    {
+        var entry = new Timetable
+        {
+            Semester = selectedSemester,
+            AcademicYear = selectedAcademicYear,
+            DayOfWeek = DayOfWeekEnum.Monday,
+            StartTime = new TimeOnly(9, 0),
+            EndTime = new TimeOnly(10, 30)
+        };
+
+        var result = await DialogService.OpenAsync<TimetableDialog>("Add Timetable Entry",
+            new Dictionary<string, object?> { { "Timetable", entry } },
+            new DialogOptions { Width = "680px", Resizable = false, CloseDialogOnOverlayClick = true });
+
+        if (result == true)
+        {
+            await LoadEntriesAsync();
+        }
+    }
+
+    private async Task ShowEditDialog(Timetable entry)
+    {
+        var entryClone = new Timetable
+        {
+            Id = entry.Id,
+            CourseId = entry.CourseId,
+            TeacherId = entry.TeacherId,
+            DayOfWeek = entry.DayOfWeek,
+            StartTime = entry.StartTime,
+            EndTime = entry.EndTime,
+            RoomNumber = entry.RoomNumber,
+            Semester = entry.Semester,
+            AcademicYear = entry.AcademicYear
+        };
+
+        var result = await DialogService.OpenAsync<TimetableDialog>("Edit Timetable Entry",
+            new Dictionary<string, object?> { { "Timetable", entryClone } },
+            new DialogOptions { Width = "680px", Resizable = false, CloseDialogOnOverlayClick = true });
+
+        if (result == true)
+        {
+            await LoadEntriesAsync();
+        }
+    }
+
+    private async Task ConfirmDelete(Timetable entry)
+    {
+        var confirm = await DialogService.Confirm(
+            $"Are you sure you want to delete the class schedule for {entry.Course?.Name} on {entry.DayOfWeek} at {entry.StartTime.ToString("h:mm tt")}?",
+            "Delete Timetable Entry",
+            new ConfirmOptions { OkButtonText = "Delete Permanently", CancelButtonText = "Cancel" });
+
+        if (confirm == true)
+        {
+            try
+            {
+                await TimetableService.DeleteAsync(entry.Id);
+                await LoadEntriesAsync();
+                NotificationService.Notify(NotificationSeverity.Warning, "Deleted", "Timetable entry has been deleted.");
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Error", $"Could not delete entry: {ex.Message}");
+            }
+        }
+    }
+}
