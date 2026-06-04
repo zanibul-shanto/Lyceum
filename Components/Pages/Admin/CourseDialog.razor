@@ -1,0 +1,127 @@
+@inject CourseService CourseService
+@inject UserService UserService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<div class="p-3">
+    @if (!string.IsNullOrEmpty(modalError))
+    {
+        <div class="alert alert-danger border-0 mb-3 alert-custom">@modalError</div>
+    }
+
+    <EditForm Model="Course" OnValidSubmit="SaveCourse" FormName="CourseDialogForm">
+        <DataAnnotationsValidator />
+
+        <div class="row g-3">
+            <div class="col-12 col-md-8">
+                <label class="form-label fw-semibold small text-secondary">Course Name</label>
+                <InputText @bind-Value="Course.Name" class="form-control form-control-custom"
+                           placeholder="e.g. Introduction to Computer Science" />
+                <ValidationMessage For="() => Course.Name" />
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label fw-semibold small text-secondary">Course Code</label>
+                <InputText @bind-Value="Course.CourseCode" class="form-control form-control-custom"
+                           placeholder="e.g. CS101" />
+                <ValidationMessage For="() => Course.CourseCode" />
+            </div>
+
+            <div class="col-12">
+                <label class="form-label fw-semibold small text-secondary">Description</label>
+                <InputTextArea @bind-Value="Course.Description" class="form-control form-control-custom"
+                               rows="2" placeholder="Brief course description..." />
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold small text-secondary">Schedule</label>
+                <InputText @bind-Value="Course.Schedule" class="form-control form-control-custom"
+                           placeholder="e.g. Mon/Wed 9:00–10:30 AM" />
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold small text-secondary">Room No.</label>
+                <InputText @bind-Value="Course.RoomNo" class="form-control form-control-custom"
+                           placeholder="e.g. Science Hall, Rm 302" />
+            </div>
+
+            <div class="col-6 col-md-3">
+                <label class="form-label fw-semibold small text-secondary">Credits</label>
+                <InputNumber @bind-Value="Course.Credits" class="form-control form-control-custom"
+                             min="1" max="10" />
+                <ValidationMessage For="() => Course.Credits" />
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label fw-semibold small text-secondary">Max Capacity</label>
+                <InputNumber @bind-Value="Course.MaxCapacity" class="form-control form-control-custom"
+                             min="1" max="500" />
+                <ValidationMessage For="() => Course.MaxCapacity" />
+            </div>
+            <div class="col-12 col-md-6 d-flex align-items-end pb-1">
+                <div class="form-check form-switch">
+                    <InputCheckbox @bind-Value="Course.IsActive" class="form-check-input" id="isActiveCb" />
+                    <label class="form-check-label fw-semibold small text-secondary" for="isActiveCb">Course is Active</label>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <label class="form-label fw-semibold small text-secondary">Assign Teachers</label>
+                @if (!allTeachers.Any())
+                {
+                    <p class="text-secondary small mb-0">No teachers found. Add teacher accounts first.</p>
+                }
+                else
+                {
+                    <RadzenDropDown @bind-Value="localTeacherIds"
+                                   Data="@allTeachers"
+                                   TextProperty="FullName"
+                                   ValueProperty="Id"
+                                   Multiple="true"
+                                   AllowFiltering="true"
+                                   FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                   Placeholder="Select teachers..."
+                                   class="w-100" />
+                }
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <RadzenButton Text="Cancel" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Save Course" Icon="save" ButtonStyle="ButtonStyle.Primary" />
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter] public Course Course { get; set; } = new();
+    [Parameter] public IEnumerable<int> SelectedTeacherIds { get; set; } = Enumerable.Empty<int>();
+
+    private List<User> allTeachers = [];
+    private IEnumerable<int> localTeacherIds = Enumerable.Empty<int>();
+    private string? modalError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        allTeachers = await UserService.GetUsersByRoleAsync(UserRole.Teacher);
+        localTeacherIds = SelectedTeacherIds.ToList();
+    }
+
+    private async Task SaveCourse()
+    {
+        modalError = null;
+        try
+        {
+            var teacherIdsList = localTeacherIds.ToList();
+
+            if (Course.Id == 0)
+                await CourseService.CreateAsync(Course, teacherIdsList);
+            else
+                await CourseService.UpdateAsync(Course, teacherIdsList);
+
+            DialogService.Close(true);
+            NotificationService.Notify(NotificationSeverity.Success, "Saved", "Course saved successfully.");
+        }
+        catch (Exception ex)
+        {
+            modalError = ex.Message;
+        }
+    }
+}

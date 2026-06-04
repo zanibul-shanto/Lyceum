@@ -1,6 +1,7 @@
 using Lyceum.Components;
 using Lyceum.Models;
 using Lyceum.Services;
+using Radzen;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -29,7 +30,7 @@ builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CustomAuthStateProvider>());
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<CourseService>();
-builder.Services.AddBlazorBootstrap();
+builder.Services.AddRadzenComponents();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

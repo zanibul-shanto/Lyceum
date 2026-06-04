@@ -11,19 +11,27 @@
 }
 else
 {
-    <div class="page">
-        <!-- Sidebar Navigation -->
-        <div class="sidebar">
-            <NavMenu />
-        </div>
+    <RadzenLayout>
+        <RadzenHeader>
+            <div class="lc-header-inner">
+                <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
+                <div class="lc-header-brand">
+                    <div class="logo-box-sidebar">L</div>
+                    <span class="logo-text-sidebar">Lyceum</span>
+                </div>
+            </div>
+        </RadzenHeader>
 
-        <!-- Main Body Area -->
-        <main class="main-content-area">
-            <article class="w-100 m-0 p-0">
+        <RadzenSidebar @bind-Expanded="@sidebarExpanded">
+            <NavMenu />
+        </RadzenSidebar>
+
+        <RadzenBody>
+            <div class="lc-body-content">
                 @Body
-            </article>
-        </main>
-    </div>
+            </div>
+        </RadzenBody>
+    </RadzenLayout>
 }
 
 <div id="blazor-error-ui" data-nosnippet>
@@ -33,13 +41,13 @@ else
 </div>
 
 @code {
+    private bool sidebarExpanded = true;
+
     private bool IsAuthPage()
     {
         var relativePath = Navigation.ToBaseRelativePath(Navigation.Uri).ToLower();
         if (relativePath.Contains("?"))
-        {
             relativePath = relativePath.Substring(0, relativePath.IndexOf("?"));
-        }
         return relativePath == "login" || relativePath == "register";
     }
 }

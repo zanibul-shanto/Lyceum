@@ -2,64 +2,92 @@
 @inject UserService UserService
 @inject CustomAuthStateProvider AuthStateProvider
 @inject NavigationManager Navigation
+@inject DialogService DialogService
 
 <PageTitle>Teacher Dashboard - Lyceum</PageTitle>
 
 <AuthorizeView Roles="Teacher" Context="authContext">
     <Authorized>
         <div class="container-fluid py-4 px-xl-5">
-            <!-- Profile & Header Section -->
+            <!-- Profile Header -->
             <div class="profile-header-gradient d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                 <div class="d-flex align-items-center">
-                    <div class="stat-icon bg-white text-primary mb-0 me-3 shadow" style="width: 60px; height: 60px; border-radius: 14px; font-size: 1.8rem;">
+                    <div class="stat-icon mb-0 me-3 shadow teacher-profile-icon">
                         <i class="bi bi-person-workspace"></i>
                     </div>
                     <div>
-                        <span class="badge bg-white-50 text-white fw-bold text-uppercase small" style="background-color: rgba(255, 255, 255, 0.2);">Teacher Profile</span>
+                        <span class="badge fw-bold text-uppercase small teacher-badge">Teacher Profile</span>
                         <h2 class="fw-bold mb-0 text-white mt-1">@currentTeacher?.FullName</h2>
-                        <p class="mb-0 text-white-50 small">@currentTeacher?.Department | ID: @currentTeacher?.TeacherId</p>
+                        <p class="mb-0 small teacher-subtitle">
+                            @currentTeacher?.Department | ID: @currentTeacher?.TeacherId
+                        </p>
                     </div>
                 </div>
-                <div class="text-md-end bg-white-10 bg-opacity-10 p-3 rounded-3" style="background: rgba(255, 255, 255, 0.1);">
-                    <div class="small text-white-50">Office Room</div>
-                    <div class="fw-bold text-white"><i class="bi bi-geo-alt-fill me-1"></i> @(currentTeacher?.OfficeRoom ?? "Not Assigned")</div>
+                <div class="text-md-end p-3 rounded-3 office-box">
+                    <div class="small office-label">Office Room</div>
+                    <div class="fw-bold text-white">
+                        <i class="bi bi-geo-alt-fill me-1"></i>
+                        @(currentTeacher?.OfficeRoom ?? "Not Assigned")
+                    </div>
                 </div>
             </div>
 
             <div class="row g-4 mb-4">
                 <!-- Bio Card -->
-                <div class="col-12 col-lg-8">
+                <div class="col-12 col-lg-4">
                     <div class="dashboard-card h-100 p-4">
-                        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-file-person text-primary me-2"></i> Professional Bio</h5>
-                        <p class="text-secondary mb-0 leading-relaxed">
-                            @(currentTeacher?.Bio ?? "No professional bio provided yet. Update your profile info in the administration panel to include academic background and research interests.")
+                        <h5 class="fw-bold text-dark mb-3">
+                            <i class="bi bi-file-person text-primary me-2"></i> Professional Bio
+                        </h5>
+                        <p class="text-secondary mb-0 small bio-text">
+                            @(currentTeacher?.Bio ?? "No professional bio provided yet. Update your profile in the administration panel.")
                         </p>
                     </div>
                 </div>
-                
+
+                <!-- GPA Distribution Chart Card -->
+                <div class="col-12 col-lg-4">
+                    <div class="dashboard-card h-100 p-4">
+                        <h5 class="fw-bold text-dark mb-3">
+                            <i class="bi bi-bar-chart-line text-success me-2"></i> GPA Distribution
+                        </h5>
+                        @if (gpaChartData.Any())
+                        {
+                            <RadzenChart class="teacher-gpa-chart">
+                                <RadzenColumnSeries Data="@gpaChartData" CategoryProperty="Range" ValueProperty="Count" Title="Students" />
+                                <RadzenValueAxis Min="0" Step="1" />
+                            </RadzenChart>
+                        }
+                        else
+                        {
+                            <p class="text-secondary small mb-0">No student GPAs recorded.</p>
+                        }
+                    </div>
+                </div>
+
                 <!-- Quick Stats -->
                 <div class="col-12 col-lg-4">
                     <div class="row g-3 h-100">
                         <div class="col-6">
                             <div class="dashboard-card p-3 h-100 d-flex flex-column justify-content-center">
-                                <span class="text-secondary small fw-semibold text-uppercase mb-1">Students</span>
-                                <h3 class="fw-bold mb-0 text-dark">@students.Count</h3>
+                                <span class="kpi-label">Students</span>
+                                <div class="kpi-number">@students.Count</div>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="dashboard-card p-3 h-100 d-flex flex-column justify-content-center">
-                                <span class="text-secondary small fw-semibold text-uppercase mb-1">Avg GPA</span>
-                                <h3 class="fw-bold mb-0 text-dark">@averageGpa.ToString("0.00")</h3>
+                                <span class="kpi-label">Avg GPA</span>
+                                <div class="kpi-number">@averageGpa.ToString("0.00")</div>
                             </div>
                         </div>
                         <div class="col-12">
                             <div class="dashboard-card p-3 d-flex align-items-center gap-3">
-                                <div class="stat-icon bg-warning-subtle text-warning mb-0" style="width: 40px; height: 40px; border-radius: 8px;">
+                                <div class="stat-icon bg-warning-subtle text-warning mb-0 stat-icon-square">
                                     <i class="bi bi-clock-history"></i>
                                 </div>
                                 <div>
                                     <span class="text-secondary small fw-semibold">Consultation Hours</span>
-                                    <div class="fw-bold text-dark small">Mon, Wed • 2:00 PM - 4:00 PM</div>
+                                    <div class="fw-bold text-dark small">Mon, Wed • 2:00 PM – 4:00 PM</div>
                                 </div>
                             </div>
                         </div>
@@ -67,160 +95,104 @@
                 </div>
             </div>
 
-            <!-- Student Roster Grid -->
+            <!-- Student Roster -->
             <div class="dashboard-card p-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h4 class="fw-bold mb-1" style="color: var(--dark);">Academic Student Roster</h4>
-                        <p class="text-secondary small mb-0">List of students currently registered under your academic department.</p>
+                        <h4 class="fw-bold mb-1 page-title-modern" style="font-size:1.15rem;">Academic Student Roster</h4>
+                        <p class="page-subtitle-modern mb-0">
+                            Students currently registered under your academic department.
+                        </p>
                     </div>
                 </div>
 
-                <div class="custom-table-container">
-                    <table class="table custom-table">
-                        <thead>
-                            <tr>
-                                <th>Student Info</th>
-                                <th>Student ID</th>
-                                <th>Grade Level</th>
-                                <th>Attendance</th>
-                                <th>GPA</th>
-                                <th class="text-end">Academic Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (students == null || !students.Any())
-                            {
-                                <tr>
-                                    <td colspan="6" class="text-center py-5 text-secondary">
-                                        <i class="bi bi-mortarboard text-muted mb-2 d-block" style="font-size: 2.5rem;"></i>
-                                        <p class="mb-0 fw-semibold">No students currently registered in the database.</p>
-                                    </td>
-                                </tr>
-                            }
-                            else
-                            {
-                                @foreach (var student in students)
-                                {
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="stat-icon bg-primary-subtle text-primary mb-0 me-3 d-none d-sm-flex" style="width: 36px; height: 36px; border-radius: 8px; font-size: 1rem;">
-                                                    <i class="bi bi-person-fill"></i>
-                                                </div>
-                                                <div>
-                                                    <div class="fw-bold text-dark">@student.FullName</div>
-                                                    <div class="text-secondary small">@student.Email</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="fw-semibold text-slate-700">
-                                            @(student.StudentId ?? "Not Assigned")
-                                        </td>
-                                        <td>
-                                            <span class="text-secondary small">@(student.GradeLevel ?? "Unspecified")</span>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="progress me-2 d-none d-md-flex" style="width: 60px; height: 6px; border-radius: 10px;">
-                                                    <div class="progress-bar bg-success" role="progressbar" style="width: @(student.AttendanceRate ?? 100)%;" aria-valuenow="@(student.AttendanceRate ?? 100)" aria-valuemin="0" aria-valuemax="100"></div>
-                                                </div>
-                                                <span class="fw-semibold font-monospace small">@(student.AttendanceRate?.ToString("0.0") ?? "100.0")%</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-success-subtle text-success font-monospace px-2 py-1" style="font-size: 0.85rem;">
-                                                @(student.GPA?.ToString("0.00") ?? "0.00")
-                                            </span>
-                                        </td>
-                                        <td class="text-end">
-                                            <button @onclick="() => OpenGradeModal(student)" class="btn btn-sm btn-primary-custom py-1 px-3 d-inline-flex align-items-center" style="font-size: 0.8rem;">
-                                                <i class="bi bi-pencil-square me-1"></i> Grade Student
-                                            </button>
-                                        </td>
-                                    </tr>
-                                }
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                <RadzenDataGrid Data="@students" TItem="User" AllowSorting="true" AllowPaging="true"
+                                PageSize="10" GridLines="DataGridGridLines.Horizontal">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="User" Title="Student Info" Sortable="false">
+                            <Template Context="student">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="stat-icon bg-primary-subtle text-primary mb-0 d-none d-sm-flex student-icon-small">
+                                        <i class="bi bi-person-fill"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark">@student.FullName</div>
+                                        <div class="text-secondary small">@student.Email</div>
+                                    </div>
+                                </div>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="User" Property="StudentId" Title="Student ID">
+                            <Template Context="student">
+                                <span class="fw-semibold">@(student.StudentId ?? "Not Assigned")</span>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="User" Property="GradeLevel" Title="Grade Level">
+                            <Template Context="student">
+                                <span class="text-secondary small">@(student.GradeLevel ?? "Unspecified")</span>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="User" Property="AttendanceRate" Title="Attendance">
+                            <Template Context="student">
+                                <div class="d-flex align-items-center gap-2">
+                                    <RadzenProgressBar Value="@(student.AttendanceRate ?? 100)"
+                                                       ShowValue="false" class="progress-bar-small" />
+                                    <span class="fw-semibold font-monospace small">
+                                        @(student.AttendanceRate?.ToString("0.0") ?? "100.0")%
+                                    </span>
+                                </div>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="User" Property="GPA" Title="GPA" Width="90px">
+                            <Template Context="student">
+                                <span class="badge bg-success-subtle text-success font-monospace px-2 py-1">
+                                    @(student.GPA?.ToString("0.00") ?? "0.00")
+                                </span>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="User" Title="" Width="140px" Sortable="false" TextAlign="TextAlign.End">
+                            <Template Context="student">
+                                <RadzenButton Text="Grade" Icon="grading" Click="@(() => OpenGradeModal(student))"
+                                              ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
             </div>
         </div>
     </Authorized>
     <NotAuthorized>
-        <!-- Premium Loader during pre-render session loading -->
-        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 80vh;">
-            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                <span class="visually-hidden">Loading...</span>
-            </div>
+        <div class="d-flex flex-column align-items-center justify-content-center portal-loading-container">
+            <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate"
+                                       Size="ProgressBarCircularSize.Large" />
             <p class="mt-3 text-secondary fw-semibold">Loading Teacher Portal...</p>
         </div>
     </NotAuthorized>
 </AuthorizeView>
-
-<!-- Modal: Grade Student -->
-@if (isGradeModalVisible)
-{
-    <div class="custom-modal-backdrop">
-        <div class="custom-modal-content" style="max-width: 480px;">
-            <div class="auth-header py-3 px-4 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
-                <h4 class="fw-bold mb-0">Grade Evaluation</h4>
-                <button type="button" class="btn-close btn-close-white" @onclick="CloseGradeModal"></button>
-            </div>
-            
-            <div class="auth-body p-4">
-                <div class="mb-4 text-center">
-                    <div class="stat-icon bg-primary-subtle text-primary mx-auto mb-2" style="width: 50px; height: 50px; border-radius: 50%; font-size: 1.4rem;">
-                        <i class="bi bi-journal-check"></i>
-                    </div>
-                    <h5 class="fw-bold mb-1 text-dark">@gradingStudent?.FullName</h5>
-                    <p class="text-secondary small mb-0">ID: @gradingStudent?.StudentId</p>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-semibold small text-secondary">Student Grade Point Average (GPA)</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light text-secondary font-monospace"><i class="bi bi-star"></i></span>
-                        <input type="number" step="0.01" min="0" max="4" @bind="tempGpa" class="form-control form-control-custom font-monospace" placeholder="e.g. 3.50" />
-                    </div>
-                    <div class="form-text small text-secondary">GPA scale must be between 0.00 and 4.00.</div>
-                </div>
-
-                <div class="mb-4">
-                    <label class="form-label fw-semibold small text-secondary">Class Attendance Rate (%)</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light text-secondary font-monospace"><i class="bi bi-percent"></i></span>
-                        <input type="number" step="0.1" min="0" max="100" @bind="tempAttendance" class="form-control form-control-custom font-monospace" placeholder="e.g. 95.0" />
-                    </div>
-                </div>
-
-                <div class="d-flex justify-content-end gap-2">
-                    <button type="button" class="btn btn-secondary-custom" @onclick="CloseGradeModal">Cancel</button>
-                    <button type="button" class="btn btn-primary-custom" @onclick="SaveStudentGrade">
-                        <i class="bi bi-check-circle me-1"></i> Apply Grades
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
 
 @code {
     private User? currentTeacher;
     private List<User> students = new();
     private double averageGpa = 0.0;
 
-    // Grade Evaluation Modal States
-    private bool isGradeModalVisible;
-    private User? gradingStudent;
-    private double tempGpa;
-    private double tempAttendance;
+    private List<GpaChartItem> gpaChartData = new();
+
+    public class GpaChartItem
+    {
+        public string Range { get; set; } = string.Empty;
+        public int Count { get; set; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var username = authState.User.Identity?.Name;
-        
+
         if (!string.IsNullOrEmpty(username))
         {
             var allUsers = await UserService.GetAllUsersAsync();
@@ -243,9 +215,7 @@
             {
                 var role = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
                 if (role != "Teacher")
-                {
                     Navigation.NavigateTo("/login");
-                }
             }
         }
     }
@@ -253,36 +223,48 @@
     private async Task LoadStudentsAsync()
     {
         students = await UserService.GetUsersByRoleAsync(UserRole.Student);
-        
         if (students.Any())
         {
             averageGpa = students.Average(s => s.GPA ?? 0.0);
+
+            gpaChartData = new List<GpaChartItem>
+            {
+                new() { Range = "3.5 - 4.0", Count = students.Count(s => (s.GPA ?? 0.0) >= 3.5) },
+                new() { Range = "3.0 - 3.49", Count = students.Count(s => (s.GPA ?? 0.0) >= 3.0 && (s.GPA ?? 0.0) < 3.5) },
+                new() { Range = "2.0 - 2.99", Count = students.Count(s => (s.GPA ?? 0.0) >= 2.0 && (s.GPA ?? 0.0) < 3.0) },
+                new() { Range = "< 2.0", Count = students.Count(s => (s.GPA ?? 0.0) < 2.0) }
+            };
+        }
+        else
+        {
+            averageGpa = 0.0;
+            gpaChartData = new();
         }
     }
 
-    private void OpenGradeModal(User student)
+    private async Task OpenGradeModal(User student)
     {
-        gradingStudent = student;
-        tempGpa = student.GPA ?? 0.0;
-        tempAttendance = student.AttendanceRate ?? 100.0;
-        isGradeModalVisible = true;
-    }
-
-    private void CloseGradeModal()
-    {
-        isGradeModalVisible = false;
-        gradingStudent = null;
-    }
-
-    private async Task SaveStudentGrade()
-    {
-        if (gradingStudent != null)
+        // Clone the student to prevent dirtying dashboard state before database commit
+        var studentClone = new User
         {
-            gradingStudent.GPA = Math.Max(0.0, Math.Min(4.0, tempGpa));
-            gradingStudent.AttendanceRate = Math.Max(0.0, Math.Min(100.0, tempAttendance));
+            Id = student.Id,
+            Username = student.Username,
+            FullName = student.FullName,
+            Email = student.Email,
+            Role = student.Role,
+            CreatedAt = student.CreatedAt,
+            StudentId = student.StudentId,
+            GradeLevel = student.GradeLevel,
+            GPA = student.GPA,
+            AttendanceRate = student.AttendanceRate
+        };
 
-            await UserService.UpdateUserAsync(gradingStudent);
-            CloseGradeModal();
+        var result = await DialogService.OpenAsync<GradeDialog>("Grade Evaluation",
+            new Dictionary<string, object?> { { "Student", studentClone } },
+            new DialogOptions { Width = "480px", Resizable = false, CloseDialogOnOverlayClick = true });
+
+        if (result == true)
+        {
             await LoadStudentsAsync();
         }
     }

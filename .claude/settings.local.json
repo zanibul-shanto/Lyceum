@@ -3,7 +3,15 @@
     "allow": [
       "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\zanib\\\\source\\\\repos\\\\Lyceum\\\\Models\" -File | Select-Object Name | ForEach-Object { $_.Name })",
       "Bash(dotnet add *)",
-      "Bash(dotnet build *)"
+      "Bash(dotnet build *)",
+      "Bash(gh api *)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(Start-Process -NoNewWindow -FilePath \"dotnet\" -ArgumentList \"run\" -PassThru)",
+      "Bash(Out-Null)",
+      "Bash(Start-Sleep -Seconds 8)",
+      "Bash(Invoke-WebRequest -Uri \"https://localhost:7081\" -SkipCertificateCheck -UseBasicParsing -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -ExpandProperty StatusCode)",
+      "PowerShell(cd \"C:\\\\Users\\\\Who\\\\source\\\\repos\\\\Lyceum\"; $proc = Start-Process -NoNewWindow -FilePath \"dotnet\" -ArgumentList \"run\" -PassThru; Start-Sleep -Seconds 10; try { $r = Invoke-WebRequest -Uri \"https://localhost:7081\" -SkipCertificateCheck -UseBasicParsing -TimeoutSec 5; \"HTTP $\\($r.StatusCode\\)\" } catch { \"Error: $_\" }; $proc)"
     ]
   }
 }

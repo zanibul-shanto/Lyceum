@@ -15,7 +15,7 @@
                     <div class="page-subtitle-modern">Spring 2026</div>
                 </div>
                 <div class="header-right-block">
-                    <!-- Outlined Header Profile Card matching new design -->
+                    <!-- Outlined Header Profile Card matching design -->
                     <div class="header-profile-card">
                         <div class="header-avatar-circle">
                             @GetInitials(currentStudent?.FullName ?? "Alex Chen")
@@ -34,7 +34,7 @@
                 <div class="col-12 col-sm-6 col-lg-3">
                     <div class="kpi-card">
                         <div class="kpi-label">Enrolled Courses</div>
-                        <div class="kpi-number">6</div>
+                        <div class="kpi-number">3</div>
                         <div class="kpi-footer text-secondary">
                             <span class="badge-spring-kpi">Spring</span> 2026
                         </div>
@@ -71,84 +71,83 @@
                 </div>
             </div>
 
-            <!-- Middle My Courses Section (3 Cards Row) -->
-            <h5 class="fw-bold mb-3 mt-4 text-dark" style="font-family: 'Outfit', sans-serif;">My Courses</h5>
+            <!-- Middle My Courses Section with Bar Chart -->
+            <h5 class="fw-bold mb-3 mt-4 text-dark font-outfit">Academic Progress</h5>
             <div class="row g-4 mb-4">
-                @foreach (var course in mockCourses)
-                {
-                    <div class="col-12 col-md-4">
-                        <div class="course-card-modern">
-                            <div>
-                                <div class="course-code-modern">@course.Code</div>
-                                <h6 class="course-title-modern">@course.Title</h6>
+                <div class="col-12 col-lg-8">
+                    <div class="row g-3">
+                        @foreach (var course in mockCourses)
+                        {
+                            <div class="col-12 col-md-6">
+                                <div class="course-card-modern h-100 course-card-min-height">
+                                    <div>
+                                        <div class="course-code-modern">@course.Code</div>
+                                        <h6 class="course-title-modern">@course.Title</h6>
+                                    </div>
+                                    <div>
+                                        <div class="course-progress-header">
+                                            <span>Progress</span>
+                                            <span>@course.Progress%</span>
+                                        </div>
+                                        <div class="course-progress-bar-container">
+                                            <div class="course-progress-bar-fill" style="width: @course.Progress%;"></div>
+                                        </div>
+                                        <div class="course-footer-modern">
+                                            Next: @course.NextTask
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <div class="course-progress-header">
-                                    <span>Progress</span>
-                                    <span>@course.Progress%</span>
-                                </div>
-                                <div class="course-progress-bar-container">
-                                    <div class="course-progress-bar-fill" style="width: @course.Progress%;"></div>
-                                </div>
-                                <div class="course-footer-modern">
-                                    Next: @course.NextTask
-                                </div>
-                            </div>
-                        </div>
+                        }
                     </div>
-                }
+                </div>
+                <div class="col-12 col-lg-4">
+                    <div class="dashboard-card p-4 h-100">
+                        <h5 class="fw-bold mb-3 text-dark tracker-title">Progress Tracker</h5>
+                        <RadzenChart class="student-progress-chart">
+                            <RadzenBarSeries Data="@mockCourses" CategoryProperty="Code" ValueProperty="Progress" Title="Progress %" />
+                            <RadzenValueAxis Min="0" Max="100" Step="20" />
+                        </RadzenChart>
+                    </div>
+                </div>
             </div>
 
-            <!-- Bottom Recent Grades Section (Table Widget) -->
-            <div class="grades-card-modern">
-                <div class="grades-card-header">
-                    <h5 class="grades-card-title">Recent Grades</h5>
-                    <a href="student/grades" class="grades-card-link">View all <i class="bi bi-arrow-right"></i></a>
+            <!-- Bottom Recent Grades Section (DataGrid Widget) -->
+            <div class="grades-card-modern p-4">
+                <div class="grades-card-header mb-3">
+                    <h5 class="grades-card-title m-0">Recent Grades</h5>
+                    <a href="student/grades" class="grades-card-link text-decoration-none">View all <i class="bi bi-arrow-right"></i></a>
                 </div>
-                <div class="table-responsive">
-                    <table class="modern-table">
-                        <thead>
-                            <tr>
-                                <th>Course</th>
-                                <th>Assignment</th>
-                                <th>Score</th>
-                                <th>Grade</th>
-                                <th>Submitted</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var grade in recentGrades)
-                            {
-                                <tr>
-                                    <td class="fw-bold text-dark">@grade.Course</td>
-                                    <td>@grade.Assignment</td>
-                                    <td class="font-monospace">@grade.Score</td>
-                                    <td>
-                                        <span class="badge-grade-modern @GetGradeClass(grade.Grade)">
-                                            @grade.Grade
-                                        </span>
-                                    </td>
-                                    <td>@grade.Submitted</td>
-                                    <td>
-                                        <span class="badge-status-modern @GetStatusClass(grade.Status)">
-                                            @grade.Status
-                                        </span>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                <RadzenDataGrid Data="@recentGrades" TItem="MockGrade" GridLines="DataGridGridLines.Horizontal">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="MockGrade" Property="Course" Title="Course" Width="110px" />
+                        <RadzenDataGridColumn TItem="MockGrade" Property="Assignment" Title="Assignment" />
+                        <RadzenDataGridColumn TItem="MockGrade" Property="Score" Title="Score" Width="100px" TextAlign="TextAlign.Center" />
+                        <RadzenDataGridColumn TItem="MockGrade" Title="Grade" Width="90px" TextAlign="TextAlign.Center">
+                            <Template Context="grade">
+                                <span class="badge-grade-modern @GetGradeClass(grade.Grade)">
+                                    @grade.Grade
+                                </span>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="MockGrade" Property="Submitted" Title="Submitted" Width="120px" />
+                        <RadzenDataGridColumn TItem="MockGrade" Title="Status" Width="110px" TextAlign="TextAlign.Center">
+                            <Template Context="grade">
+                                <span class="badge-status-modern @GetStatusClass(grade.Status)">
+                                    @grade.Status
+                                </span>
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
             </div>
         </div>
     </Authorized>
     <NotAuthorized>
-        <!-- Premium Loader during pre-render session loading -->
-        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 80vh;">
-            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                <span class="visually-hidden">Loading...</span>
-            </div>
+        <!-- Loader during authentication session check -->
+        <div class="d-flex flex-column align-items-center justify-content-center portal-loading-container">
+            <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate"
+                                       Size="ProgressBarCircularSize.Large" />
             <p class="mt-3 text-secondary fw-semibold">Loading Student Portal...</p>
         </div>
     </NotAuthorized>

@@ -1,119 +1,57 @@
 @inject CustomAuthStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 
-<!-- Brand Header -->
-<div class="sidebar-brand">
-    <div class="logo-box-sidebar">L</div>
-    <div class="logo-text-sidebar">Lyceum</div>
-</div>
-
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<!-- Sidebar Scrollable Navigation -->
-<div class="nav-scrollable sidebar-menu-scrollable d-flex flex-column justify-content-between">
-    <nav class="nav flex-column">
-        <AuthorizeView>
-            <Authorized>
-                <!-- STUDENT PORTAL MENUS -->
-                <AuthorizeView Roles="Student" Context="studentCtx">
-                    <div class="sidebar-section-label">Student Portal</div>
-                    
-                    <NavLink class="sidebar-nav-link" href="student/dashboard" Match="NavLinkMatch.All">
-                        <span><i class="bi bi-grid me-2"></i> Dashboard</span>
-                    </NavLink>
-                    
-                    <NavLink class="sidebar-nav-link" href="student/courses">
-                        <span><i class="bi bi-book me-2"></i> My Courses</span>
-                    </NavLink>
-                    
-                    <NavLink class="sidebar-nav-link" href="student/assignments">
-                        <span><i class="bi bi-file-earmark-text me-2"></i> Assignments</span>
-                    </NavLink>
-                    
-                    <NavLink class="sidebar-nav-link" href="student/grades">
-                        <span><i class="bi bi-bar-chart-line me-2"></i> Grades</span>
-                    </NavLink>
-                    
-                    <NavLink class="sidebar-nav-link" href="student/schedule">
-                        <span><i class="bi bi-calendar3 me-2"></i> Schedule</span>
-                    </NavLink>
-                    
-                    <NavLink class="sidebar-nav-link" href="student/messages">
-                        <span><i class="bi bi-chat-left-text me-2"></i> Messages</span>
-                        <span class="sidebar-badge-pill">2</span>
-                    </NavLink>
-                </AuthorizeView>
-
-                <!-- TEACHER PORTAL MENUS -->
-                <AuthorizeView Roles="Teacher" Context="teacherCtx">
-                    <div class="sidebar-section-label">Teacher Portal</div>
-                    
-                    <NavLink class="sidebar-nav-link" href="teacher/dashboard" Match="NavLinkMatch.All">
-                        <span><i class="bi bi-grid me-2"></i> Dashboard</span>
-                    </NavLink>
-                    
-                    <NavLink class="sidebar-nav-link" href="teacher/classes">
-                        <span><i class="bi bi-people me-2"></i> Student Roster</span>
-                    </NavLink>
-                    
-                    <NavLink class="sidebar-nav-link" href="teacher/evaluations">
-                        <span><i class="bi bi-journal-check me-2"></i> Evaluations</span>
-                    </NavLink>
-                    
-                    <NavLink class="sidebar-nav-link" href="teacher/schedule">
-                        <span><i class="bi bi-calendar3 me-2"></i> Schedule</span>
-                    </NavLink>
-                </AuthorizeView>
-
-                <!-- ADMIN PORTAL MENUS -->
-                <AuthorizeView Roles="Admin" Context="adminCtx">
-                    <div class="sidebar-section-label">Admin Portal</div>
-                    
-                    <NavLink class="sidebar-nav-link" href="admin/dashboard" Match="NavLinkMatch.All">
-                        <span><i class="bi bi-shield-lock me-2"></i> Dashboard</span>
-                    </NavLink>
-                    
-                    <NavLink class="sidebar-nav-link" href="admin/users">
-                        <span><i class="bi bi-people me-2"></i> Manage Directory</span>
-                    </NavLink>
-
-                    <NavLink class="sidebar-nav-link" href="admin/courses">
-                        <span><i class="bi bi-book-half me-2"></i> Course Management</span>
-                    </NavLink>
-
-                    <NavLink class="sidebar-nav-link" href="admin/settings">
-                        <span><i class="bi bi-gear me-2"></i> System Settings</span>
-                    </NavLink>
-                </AuthorizeView>
-            </Authorized>
+<AuthorizeView>
+    <Authorized>
+        <!-- STUDENT PORTAL -->
+        <AuthorizeView Roles="Student" Context="studentCtx">
+            <div class="sidebar-section-label">Student Portal</div>
+            <RadzenPanelMenu>
+                <RadzenPanelMenuItem Text="Dashboard" Icon="grid_view" Path="/student/dashboard" />
+                <RadzenPanelMenuItem Text="My Courses" Icon="book" Path="/student/courses" />
+                <RadzenPanelMenuItem Text="Assignments" Icon="assignment" Path="/student/assignments" />
+                <RadzenPanelMenuItem Text="Grades" Icon="bar_chart" Path="/student/grades" />
+                <RadzenPanelMenuItem Text="Schedule" Icon="calendar_month" Path="/student/schedule" />
+                <RadzenPanelMenuItem Text="Messages" Icon="chat" Path="/student/messages" />
+            </RadzenPanelMenu>
         </AuthorizeView>
-    </nav>
 
-    <!-- Bottom Profile & Logout block -->
-    <AuthorizeView>
-        <Authorized>
-            <div>
-                <!-- Logout link matching mockup -->
-                <div class="sidebar-logout-block">
-                    <a href="javascript:void(0)" @onclick="Logout" class="sidebar-logout-link">
-                        <i class="bi bi-box-arrow-left"></i>
-                        <span>Log out</span>
-                    </a>
-                </div>
-            </div>
-        </Authorized>
-    </AuthorizeView>
-</div>
+        <!-- TEACHER PORTAL -->
+        <AuthorizeView Roles="Teacher" Context="teacherCtx">
+            <div class="sidebar-section-label">Teacher Portal</div>
+            <RadzenPanelMenu>
+                <RadzenPanelMenuItem Text="Dashboard" Icon="grid_view" Path="/teacher/dashboard" />
+                <RadzenPanelMenuItem Text="Student Roster" Icon="people" Path="/teacher/classes" />
+                <RadzenPanelMenuItem Text="Evaluations" Icon="grading" Path="/teacher/evaluations" />
+                <RadzenPanelMenuItem Text="Schedule" Icon="calendar_month" Path="/teacher/schedule" />
+            </RadzenPanelMenu>
+        </AuthorizeView>
+
+        <!-- ADMIN PORTAL -->
+        <AuthorizeView Roles="Admin" Context="adminCtx">
+            <div class="sidebar-section-label">Admin Portal</div>
+            <RadzenPanelMenu>
+                <RadzenPanelMenuItem Text="Dashboard" Icon="shield" Path="/admin/dashboard" />
+                <RadzenPanelMenuItem Text="Manage Directory" Icon="manage_accounts" Path="/admin/users" />
+                <RadzenPanelMenuItem Text="Course Management" Icon="library_books" Path="/admin/courses" />
+                <RadzenPanelMenuItem Text="System Settings" Icon="settings" Path="/admin/settings" />
+            </RadzenPanelMenu>
+        </AuthorizeView>
+    </Authorized>
+</AuthorizeView>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="sidebar-logout-block">
+            <a href="javascript:void(0)" @onclick="Logout" class="sidebar-logout-link">
+                <i class="bi bi-box-arrow-left"></i>
+                <span>Log out</span>
+            </a>
+        </div>
+    </Authorized>
+</AuthorizeView>
 
 @code {
-    private string GetInitials(string fullName)
-    {
-        if (string.IsNullOrWhiteSpace(fullName) || fullName == "admin" || fullName == "teacher" || fullName == "student") return "AC";
-        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 1) return parts[0][0].ToString().ToUpper();
-        return (parts[0][0].ToString() + parts[^1][0].ToString()).ToUpper();
-    }
-
     private async Task Logout()
     {
         await AuthStateProvider.MarkUserAsLoggedOut();

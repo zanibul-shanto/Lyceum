@@ -1,0 +1,72 @@
+@inject UserService UserService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<div class="p-3">
+    <div class="mb-4 text-center">
+        <div class="stat-icon bg-primary-subtle text-primary mx-auto mb-2 grade-dialog-icon">
+            <i class="bi bi-journal-check"></i>
+        </div>
+        <h5 class="fw-bold mb-1 text-dark">@Student.FullName</h5>
+        <p class="text-secondary small mb-0">ID: @Student.StudentId</p>
+    </div>
+
+    <EditForm Model="this" OnValidSubmit="SaveGrade" FormName="GradeDialogForm">
+        <div class="mb-3">
+            <label class="form-label fw-semibold small text-secondary">GPA (0.00 – 4.00)</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light text-secondary font-monospace">
+                    <i class="bi bi-star"></i>
+                </span>
+                <input type="number" step="0.01" min="0" max="4" @bind="tempGpa"
+                       class="form-control form-control-custom font-monospace" placeholder="e.g. 3.50" required />
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label fw-semibold small text-secondary">Attendance Rate (%)</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light text-secondary font-monospace">
+                    <i class="bi bi-percent"></i>
+                </span>
+                <input type="number" step="0.1" min="0" max="100" @bind="tempAttendance"
+                       class="form-control form-control-custom font-monospace" placeholder="e.g. 95.0" required />
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <RadzenButton Text="Cancel" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Apply Grades" Icon="check_circle" ButtonStyle="ButtonStyle.Primary" />
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter] public User Student { get; set; } = new();
+
+    private double tempGpa;
+    private double tempAttendance;
+
+    protected override void OnInitialized()
+    {
+        tempGpa = Student.GPA ?? 0.0;
+        tempAttendance = Student.AttendanceRate ?? 100.0;
+    }
+
+    private async Task SaveGrade()
+    {
+        try
+        {
+            Student.GPA = Math.Max(0.0, Math.Min(4.0, tempGpa));
+            Student.AttendanceRate = Math.Max(0.0, Math.Min(100.0, tempAttendance));
+            await UserService.UpdateUserAsync(Student);
+            
+            DialogService.Close(true);
+            NotificationService.Notify(NotificationSeverity.Success, "Success", "Grades applied successfully.");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Could not save grades: {ex.Message}");
+        }
+    }
+}

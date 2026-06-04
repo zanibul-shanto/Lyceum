@@ -1,0 +1,170 @@
+@inject UserService UserService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<div class="p-3">
+    @if (!string.IsNullOrEmpty(modalErrorMessage))
+    {
+        <div class="alert alert-danger border-0 mb-3 alert-custom">
+            @modalErrorMessage
+        </div>
+    }
+
+    <EditForm Model="User" OnValidSubmit="SaveUser" FormName="UserDialogForm">
+        <DataAnnotationsValidator />
+
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold small text-secondary">Username</label>
+                <InputText @bind-Value="User.Username" class="form-control form-control-custom"
+                           disabled="@(User.Id != 0)" placeholder="Enter username" />
+                <ValidationMessage For="() => User.Username" />
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold small text-secondary">Full Name</label>
+                <InputText @bind-Value="User.FullName" class="form-control form-control-custom"
+                           placeholder="Enter full name" />
+                <ValidationMessage For="() => User.FullName" />
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold small text-secondary">Email Address</label>
+                <InputText @bind-Value="User.Email" class="form-control form-control-custom"
+                           placeholder="Enter email" />
+                <ValidationMessage For="() => User.Email" />
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold small text-secondary">System Role</label>
+                <InputSelect @bind-Value="User.Role" class="form-select form-control-custom">
+                    <option value="Student">Student</option>
+                    <option value="Teacher">Teacher</option>
+                    <option value="Admin">Administrator</option>
+                </InputSelect>
+            </div>
+
+            @if (User.Id == 0)
+            {
+                <div class="col-12">
+                    <label class="form-label fw-semibold small text-secondary">Password</label>
+                    <input type="password" @bind="newUserPassword" class="form-control form-control-custom"
+                           placeholder="Enter temporary password" required />
+                </div>
+            }
+
+            @if (User.Role == UserRole.Student)
+            {
+                <div class="col-12 p-3 bg-light rounded-3 mt-3 border">
+                    <h6 class="fw-bold mb-3 text-primary d-flex align-items-center">
+                        <i class="bi bi-mortarboard-fill me-2"></i> Student Details
+                    </h6>
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small text-secondary">Student ID (Optional)</label>
+                            <InputText @bind-Value="User.StudentId" class="form-control form-control-custom py-1"
+                                       placeholder="e.g. STU-2026-001" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small text-secondary">Grade Level</label>
+                            <InputSelect @bind-Value="User.GradeLevel" class="form-select form-control-custom py-1">
+                                <option value="">Select Grade</option>
+                                <option value="Freshman (1st Year)">Freshman (1st Year)</option>
+                                <option value="Sophomore (2nd Year)">Sophomore (2nd Year)</option>
+                                <option value="Junior (3rd Year)">Junior (3rd Year)</option>
+                                <option value="Senior (4th Year)">Senior (4th Year)</option>
+                            </InputSelect>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-secondary">GPA</label>
+                            <InputNumber @bind-Value="User.GPA" class="form-control form-control-custom py-1"
+                                         step="0.01" min="0" max="4" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-secondary">Attendance Rate (%)</label>
+                            <InputNumber @bind-Value="User.AttendanceRate" class="form-control form-control-custom py-1"
+                                         step="0.1" min="0" max="100" />
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (User.Role == UserRole.Teacher)
+            {
+                <div class="col-12 p-3 bg-light rounded-3 mt-3 border">
+                    <h6 class="fw-bold mb-3 text-warning d-flex align-items-center">
+                        <i class="bi bi-person-workspace me-2"></i> Teacher Details
+                    </h6>
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small text-secondary">Teacher ID (Optional)</label>
+                            <InputText @bind-Value="User.TeacherId" class="form-control form-control-custom py-1"
+                                       placeholder="e.g. TCH-2026-042" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small text-secondary">Department</label>
+                            <InputSelect @bind-Value="User.Department" class="form-select form-control-custom py-1">
+                                <option value="">Select Department</option>
+                                <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+                                <option value="Mathematics">Mathematics</option>
+                                <option value="Physics">Physics</option>
+                                <option value="Chemistry">Chemistry</option>
+                                <option value="Humanities">Humanities</option>
+                            </InputSelect>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small text-secondary">Office Room</label>
+                            <InputText @bind-Value="User.OfficeRoom" class="form-control form-control-custom py-1"
+                                       placeholder="e.g. Science Hall, Rm 302" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small text-secondary">Biography</label>
+                            <InputTextArea @bind-Value="User.Bio" class="form-control form-control-custom py-1"
+                                           rows="2" placeholder="Brief professional background..." />
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <RadzenButton Text="Cancel" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Save Changes" Icon="save" ButtonStyle="ButtonStyle.Primary" />
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter] public User User { get; set; } = new();
+
+    private string newUserPassword = string.Empty;
+    private string? modalErrorMessage;
+
+    private async Task SaveUser()
+    {
+        modalErrorMessage = null;
+        try
+        {
+            if (User.Id == 0)
+            {
+                if (string.IsNullOrWhiteSpace(newUserPassword))
+                {
+                    modalErrorMessage = "Password is required for new users.";
+                    return;
+                }
+                await UserService.RegisterAsync(User, newUserPassword);
+            }
+            else
+            {
+                await UserService.UpdateUserAsync(User);
+            }
+
+            DialogService.Close(true);
+            NotificationService.Notify(NotificationSeverity.Success, "Success", "User saved successfully.");
+        }
+        catch (Exception ex)
+        {
+            modalErrorMessage = ex.Message;
+        }
+    }
+}

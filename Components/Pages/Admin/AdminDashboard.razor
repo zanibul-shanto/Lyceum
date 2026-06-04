@@ -2,369 +2,226 @@
 @inject UserService UserService
 @inject CustomAuthStateProvider AuthStateProvider
 @inject NavigationManager Navigation
+@inject NotificationService NotificationService
+@inject DialogService DialogService
 
 <PageTitle>Admin Dashboard - Lyceum</PageTitle>
 
 <AuthorizeView Roles="Admin" Context="authContext">
     <Authorized>
-
-<div class="container-fluid py-4 px-xl-5">
-    <!-- Header Section -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="fw-bold mb-1" style="color: var(--dark); font-size: 2.2rem;">System administration</h1>
-            <p class="text-secondary mb-0">Manage users, adjust system roles, and monitor system activities.</p>
-        </div>
-        <button @onclick="ShowAddUserModal" class="btn btn-primary-custom d-flex align-items-center shadow-sm">
-            <i class="bi bi-person-plus-fill me-2" style="font-size: 1.1rem;"></i>
-            <span>Add New User</span>
-        </button>
-    </div>
-
-    <!-- Analytics Section -->
-    <div class="row g-4 mb-5">
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="dashboard-card">
-                <div class="stat-icon bg-primary-subtle text-primary">
-                    <i class="bi bi-people-fill"></i>
+        <div class="container-fluid py-4 px-xl-5">
+            <!-- Header Section -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="fw-bold mb-1 page-title-modern">System Administration</h1>
+                    <p class="page-subtitle-modern">Manage users, adjust system roles, and monitor system activities.</p>
                 </div>
-                <div class="text-secondary small fw-semibold text-uppercase mb-1">Total Users</div>
-                <h3 class="fw-bold mb-0 text-dark">@totalUsersCount</h3>
+                <RadzenButton Text="Add New User" Icon="person_add" Click="ShowAddUserModal"
+                              ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Medium" />
             </div>
-        </div>
 
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="dashboard-card">
-                <div class="stat-icon bg-success-subtle text-success">
-                    <i class="bi bi-mortarboard-fill"></i>
-                </div>
-                <div class="text-secondary small fw-semibold text-uppercase mb-1">Total Students</div>
-                <h3 class="fw-bold mb-0 text-dark">@studentsCount</h3>
-            </div>
-        </div>
-
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="dashboard-card">
-                <div class="stat-icon bg-warning-subtle text-warning">
-                    <i class="bi bi-person-workspace"></i>
-                </div>
-                <div class="text-secondary small fw-semibold text-uppercase mb-1">Total Teachers</div>
-                <h3 class="fw-bold mb-0 text-dark">@teachersCount</h3>
-            </div>
-        </div>
-
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="dashboard-card">
-                <div class="stat-icon bg-danger-subtle text-danger">
-                    <i class="bi bi-shield-lock-fill"></i>
-                </div>
-                <div class="text-secondary small fw-semibold text-uppercase mb-1">Total Admins</div>
-                <h3 class="fw-bold mb-0 text-dark">@adminsCount</h3>
-            </div>
-        </div>
-    </div>
-
-    <!-- User Grid Section -->
-    <div class="dashboard-card p-4 mb-4">
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
-            <h4 class="fw-bold mb-0" style="color: var(--dark);">User Directory</h4>
-            
-            <div class="d-flex flex-wrap gap-2 align-items-center">
-                <!-- Search -->
-                <div class="position-relative" style="min-width: 250px;">
-                    <i class="bi bi-search text-secondary position-absolute" style="left: 12px; top: 10px; font-size: 0.95rem;"></i>
-                    <input type="text" @bind-value="searchTerm" @bind-value:event="oninput" @onkeyup="FilterUsers" class="form-control form-control-custom ps-5 py-2" placeholder="Search by name or username..." />
+            <!-- Analytics Section -->
+            <div class="row g-4 mb-4">
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="dashboard-card">
+                        <div class="stat-icon bg-primary-subtle text-primary">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <div class="text-secondary small fw-semibold text-uppercase mb-1">Total Users</div>
+                        <h3 class="fw-bold mb-0 text-dark">@totalUsersCount</h3>
+                    </div>
                 </div>
 
-                <!-- Filter -->
-                <select class="form-select form-control-custom py-2" style="min-width: 150px;" @onchange="OnRoleFilterChanged">
-                    <option value="All">All Roles</option>
-                    <option value="Admin">Administrators</option>
-                    <option value="Teacher">Teachers</option>
-                    <option value="Student">Students</option>
-                </select>
-            </div>
-        </div>
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="dashboard-card">
+                        <div class="stat-icon bg-success-subtle text-success">
+                            <i class="bi bi-mortarboard-fill"></i>
+                        </div>
+                        <div class="text-secondary small fw-semibold text-uppercase mb-1">Total Students</div>
+                        <h3 class="fw-bold mb-0 text-dark">@studentsCount</h3>
+                    </div>
+                </div>
 
-        <div class="custom-table-container">
-            <table class="table custom-table">
-                <thead>
-                    <tr>
-                        <th>User Info</th>
-                        <th>Role</th>
-                        <th>Details</th>
-                        <th>Registered</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (filteredUsers == null || !filteredUsers.Any())
-                    {
-                        <tr>
-                            <td colspan="5" class="text-center py-5 text-secondary">
-                                <i class="bi bi-people text-muted mb-2 d-block" style="font-size: 2.5rem;"></i>
-                                <p class="mb-0 fw-semibold">No users found matching current filters.</p>
-                            </td>
-                        </tr>
-                    }
-                    else
-                    {
-                        @foreach (var user in filteredUsers)
-                        {
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="stat-icon bg-primary-subtle text-primary mb-0 me-3 d-none d-sm-flex" style="width: 40px; height: 40px; border-radius: 10px; font-size: 1.1rem;">
-                                            @if (user.Role == UserRole.Admin)
-                                            {
-                                                <i class="bi bi-shield-lock-fill text-danger"></i>
-                                            }
-                                            else if (user.Role == UserRole.Teacher)
-                                            {
-                                                <i class="bi bi-person-workspace text-warning"></i>
-                                            }
-                                            else
-                                            {
-                                                <i class="bi bi-mortarboard-fill text-primary"></i>
-                                            }
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold text-dark">@user.FullName</div>
-                                            <div class="text-secondary small d-flex align-items-center">
-                                                <span class="me-2">@@@user.Username</span>
-                                                <span class="text-slate-300">•</span>
-                                                <span class="ms-2">@user.Email</span>
-                                            </div>
-                                        </div>
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="dashboard-card">
+                        <div class="stat-icon bg-warning-subtle text-warning">
+                            <i class="bi bi-person-workspace"></i>
+                        </div>
+                        <div class="text-secondary small fw-semibold text-uppercase mb-1">Total Teachers</div>
+                        <h3 class="fw-bold mb-0 text-dark">@teachersCount</h3>
+                    </div>
+                </div>
+
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="dashboard-card">
+                        <div class="stat-icon bg-danger-subtle text-danger">
+                            <i class="bi bi-shield-lock-fill"></i>
+                        </div>
+                        <div class="text-secondary small fw-semibold text-uppercase mb-1">Total Admins</div>
+                        <h3 class="fw-bold mb-0 text-dark">@adminsCount</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Charts & Activity Overview Row -->
+            <div class="row g-4 mb-4">
+                <div class="col-12 col-lg-4">
+                    <div class="dashboard-card p-4 h-100">
+                        <h5 class="fw-bold mb-3 text-dark">User Distribution</h5>
+                        <RadzenChart class="admin-donut-chart">
+                            <RadzenDonutSeries Data="@roleChartData" CategoryProperty="Role" ValueProperty="Count" Title="Users">
+                                <TitleTemplate>
+                                    <div class="rz-donut-title donut-title-text">
+                                        Total
+                                        <span class="donut-title-count">@totalUsersCount</span>
                                     </div>
-                                </td>
-                                <td>
-                                    @if (user.Role == UserRole.Admin)
-                                    {
-                                        <span class="badge-role badge-admin">Admin</span>
-                                    }
-                                    else if (user.Role == UserRole.Teacher)
-                                    {
-                                        <span class="badge-role badge-teacher">Teacher</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge-role badge-student">Student</span>
-                                    }
-                                </td>
-                                <td>
-                                    <div class="small">
-                                        @if (user.Role == UserRole.Student)
+                                </TitleTemplate>
+                            </RadzenDonutSeries>
+                        </RadzenChart>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-8">
+                    <div class="dashboard-card p-4 h-100">
+                        <h5 class="fw-bold mb-3 text-dark">Administrative Actions & Quick Access</h5>
+                        <div class="row g-3">
+                            <div class="col-12 col-sm-6">
+                                <div class="p-3 border rounded-3 d-flex align-items-center gap-3 bg-light">
+                                    <div class="stat-icon bg-primary-subtle text-primary mb-0 shadow-sm action-card-icon">
+                                        <i class="bi bi-person-add"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0 action-title-primary" @onclick="ShowAddUserModal">Register New User</h6>
+                                        <span class="text-secondary small">Add student, teacher, or admin</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <div class="p-3 border rounded-3 d-flex align-items-center gap-3 bg-light">
+                                    <div class="stat-icon bg-success-subtle text-success mb-0 shadow-sm action-card-icon">
+                                        <i class="bi bi-book"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0"><a href="/admin/courses" class="action-title-success">Manage Courses</a></h6>
+                                        <span class="text-secondary small">Add, update, or schedule courses</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Grid Section -->
+            <div class="dashboard-card p-4 mb-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                    <h4 class="fw-bold mb-0 page-title-modern section-title-medium">User Directory</h4>
+
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <RadzenTextBox @bind-Value="searchTerm" Placeholder="Search by name or username..." Change="@(_ => FilterUsers())"
+                                       class="search-textbox" />
+                        <RadzenDropDown Data="@roleOptions" @bind-Value="roleFilter" Change="@(_ => FilterUsers())"
+                                       class="role-dropdown" />
+                    </div>
+                </div>
+
+                <RadzenDataGrid Data="@filteredUsers" TItem="User" AllowSorting="true" AllowPaging="true"
+                                PageSize="10" AllowColumnResize="false" GridLines="DataGridGridLines.Horizontal">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="User" Title="User Info" Sortable="false">
+                            <Template Context="user">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="stat-icon mb-0 d-none d-sm-flex user-grid-icon" style="@GetRoleIconStyle(user.Role)">
+                                        @if (user.Role == UserRole.Admin)
                                         {
-                                            <span class="text-slate-500">ID:</span> <span class="fw-semibold text-dark">@user.StudentId</span>
-                                            <br />
-                                            <span class="text-slate-500">GPA:</span> <span class="badge bg-success-subtle text-success font-monospace">@user.GPA?.ToString("0.00")</span>
+                                            <i class="bi bi-shield-lock-fill"></i>
                                         }
                                         else if (user.Role == UserRole.Teacher)
                                         {
-                                            <span class="text-slate-500">Dept:</span> <span class="fw-semibold text-dark">@user.Department</span>
-                                            <br />
-                                            <span class="text-slate-500">ID:</span> <span class="fw-semibold text-dark">@user.TeacherId</span>
+                                            <i class="bi bi-person-workspace"></i>
                                         }
                                         else
                                         {
-                                            <span class="text-slate-400">—</span>
+                                            <i class="bi bi-mortarboard-fill"></i>
                                         }
                                     </div>
-                                </td>
-                                <td class="text-secondary small">
-                                    @user.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")
-                                </td>
-                                <td class="text-end">
-                                    <button @onclick="() => ShowEditUserModal(user)" class="btn btn-sm btn-outline-primary border-0 me-1" title="Edit User">
-                                        <i class="bi bi-pencil-square" style="font-size: 1.1rem;"></i>
-                                    </button>
-                                    <button @onclick="() => ConfirmDeleteUser(user)" class="btn btn-sm btn-outline-danger border-0" title="Delete User">
-                                        <i class="bi bi-trash-fill" style="font-size: 1.1rem;"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- Modal: Add / Edit User -->
-@if (isUserModalVisible)
-{
-    <div class="custom-modal-backdrop">
-        <div class="custom-modal-content">
-            <div class="auth-header py-3 px-4 d-flex justify-content-between align-items-center">
-                <h4 class="fw-bold mb-0">@(editingUser.Id == 0 ? "Add New User" : "Edit User Profile")</h4>
-                <button type="button" class="btn-close btn-close-white" @onclick="CloseUserModal"></button>
-            </div>
-            
-            <div class="auth-body p-4">
-                @if (!string.IsNullOrEmpty(modalErrorMessage))
-                {
-                    <div class="alert alert-danger border-0 mb-3" style="border-radius: 8px;">
-                        @modalErrorMessage
-                    </div>
-                }
-
-                <EditForm Model="editingUser" OnValidSubmit="SaveUser" FormName="UserEditForm">
-                    <DataAnnotationsValidator />
-
-                    <div class="row g-3">
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold small text-secondary">Username</label>
-                            <InputText @bind-Value="editingUser.Username" class="form-control form-control-custom" disabled="@(editingUser.Id != 0)" placeholder="Enter username" />
-                            <ValidationMessage For="() => editingUser.Username" />
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold small text-secondary">Full Name</label>
-                            <InputText @bind-Value="editingUser.FullName" class="form-control form-control-custom" placeholder="Enter full name" />
-                            <ValidationMessage For="() => editingUser.FullName" />
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold small text-secondary">Email Address</label>
-                            <InputText @bind-Value="editingUser.Email" class="form-control form-control-custom" placeholder="Enter email" />
-                            <ValidationMessage For="() => editingUser.Email" />
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold small text-secondary">System Role</label>
-                            <InputSelect @bind-Value="editingUser.Role" class="form-select form-control-custom">
-                                <option value="Student">Student</option>
-                                <option value="Teacher">Teacher</option>
-                                <option value="Admin">Administrator</option>
-                            </InputSelect>
-                        </div>
-
-                        @if (editingUser.Id == 0)
-                        {
-                            <div class="col-12">
-                                <label class="form-label fw-semibold small text-secondary">Password</label>
-                                <input type="password" @bind="newUserPassword" class="form-control form-control-custom" placeholder="Enter temporary password" required />
-                            </div>
-                        }
-
-                        <!-- Dynamic Section for Students -->
-                        @if (editingUser.Role == UserRole.Student)
-                        {
-                            <div class="col-12 p-3 bg-light rounded-3 mt-3 border">
-                                <h6 class="fw-bold mb-3 text-primary d-flex align-items-center">
-                                    <i class="bi bi-mortarboard-fill me-2"></i> Student Details
-                                </h6>
-                                <div class="row g-2">
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label small text-secondary">Student ID (Optional)</label>
-                                        <InputText @bind-Value="editingUser.StudentId" class="form-control form-control-custom py-1" placeholder="e.g. STU-2026-001" />
-                                    </div>
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label small text-secondary">Grade Level</label>
-                                        <InputSelect @bind-Value="editingUser.GradeLevel" class="form-select form-control-custom py-1">
-                                            <option value="">Select Grade</option>
-                                            <option value="Freshman (1st Year)">Freshman (1st Year)</option>
-                                            <option value="Sophomore (2nd Year)">Sophomore (2nd Year)</option>
-                                            <option value="Junior (3rd Year)">Junior (3rd Year)</option>
-                                            <option value="Senior (4th Year)">Senior (4th Year)</option>
-                                        </InputSelect>
-                                    </div>
-                                    <div class="col-6">
-                                        <label class="form-label small text-secondary">GPA</label>
-                                        <InputNumber @bind-Value="editingUser.GPA" class="form-control form-control-custom py-1" step="0.01" min="0" max="4" />
-                                    </div>
-                                    <div class="col-6">
-                                        <label class="form-label small text-secondary">Attendance Rate (%)</label>
-                                        <InputNumber @bind-Value="editingUser.AttendanceRate" class="form-control form-control-custom py-1" step="0.1" min="0" max="100" />
+                                    <div>
+                                        <div class="fw-bold text-dark">@user.FullName</div>
+                                        <div class="text-secondary small">
+                                            <span>@@@user.Username</span>
+                                            <span class="mx-1">•</span>
+                                            <span>@user.Email</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        }
+                            </Template>
+                        </RadzenDataGridColumn>
 
-                        <!-- Dynamic Section for Teachers -->
-                        @if (editingUser.Role == UserRole.Teacher)
-                        {
-                            <div class="col-12 p-3 bg-light rounded-3 mt-3 border">
-                                <h6 class="fw-bold mb-3 text-warning d-flex align-items-center">
-                                    <i class="bi bi-person-workspace me-2"></i> Teacher Details
-                                </h6>
-                                <div class="row g-2">
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label small text-secondary">Teacher ID (Optional)</label>
-                                        <InputText @bind-Value="editingUser.TeacherId" class="form-control form-control-custom py-1" placeholder="e.g. TCH-2026-042" />
-                                    </div>
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label small text-secondary">Department</label>
-                                        <InputSelect @bind-Value="editingUser.Department" class="form-select form-control-custom py-1">
-                                            <option value="">Select Department</option>
-                                            <option value="Computer Science & Engineering">Computer Science & Engineering</option>
-                                            <option value="Mathematics">Mathematics</option>
-                                            <option value="Physics">Physics</option>
-                                            <option value="Chemistry">Chemistry</option>
-                                            <option value="Humanities">Humanities</option>
-                                        </InputSelect>
-                                    </div>
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label small text-secondary">Office Room</label>
-                                        <InputText @bind-Value="editingUser.OfficeRoom" class="form-control form-control-custom py-1" placeholder="e.g. Science Hall, Rm 302" />
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label small text-secondary">Biography</label>
-                                        <InputTextArea @bind-Value="editingUser.Bio" class="form-control form-control-custom py-1" rows="2" placeholder="Brief professional background..." />
-                                    </div>
+                        <RadzenDataGridColumn TItem="User" Property="Role" Title="Role" Width="110px">
+                            <Template Context="user">
+                                @if (user.Role == UserRole.Admin)
+                                {
+                                    <span class="badge-role badge-admin">Admin</span>
+                                }
+                                else if (user.Role == UserRole.Teacher)
+                                {
+                                    <span class="badge-role badge-teacher">Teacher</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-role badge-student">Student</span>
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="User" Title="Details" Sortable="false">
+                            <Template Context="user">
+                                <div class="small">
+                                    @if (user.Role == UserRole.Student)
+                                    {
+                                        <span class="text-secondary">ID:</span> <span class="fw-semibold">@user.StudentId</span>
+                                        <br />
+                                        <span class="text-secondary">GPA:</span>
+                                        <span class="badge bg-success-subtle text-success font-monospace ms-1">@user.GPA?.ToString("0.00")</span>
+                                    }
+                                    else if (user.Role == UserRole.Teacher)
+                                    {
+                                        <span class="text-secondary">Dept:</span> <span class="fw-semibold">@user.Department</span>
+                                        <br />
+                                        <span class="text-secondary">ID:</span> <span class="fw-semibold">@user.TeacherId</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-secondary">—</span>
+                                    }
                                 </div>
-                            </div>
-                        }
-                    </div>
+                            </Template>
+                        </RadzenDataGridColumn>
 
-                    <div class="d-flex justify-content-end gap-2 mt-4">
-                        <button type="button" class="btn btn-secondary-custom" @onclick="CloseUserModal">Cancel</button>
-                        <button type="submit" class="btn btn-primary-custom d-flex align-items-center">
-                            <i class="bi bi-save me-2"></i> Save Changes
-                        </button>
-                    </div>
-                </EditForm>
+                        <RadzenDataGridColumn TItem="User" Property="CreatedAt" Title="Registered" Width="130px">
+                            <Template Context="user">
+                                <span class="text-secondary small">@user.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</span>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="User" Title="" Width="100px" Sortable="false" TextAlign="TextAlign.End">
+                            <Template Context="user">
+                                <RadzenButton Icon="edit" Click="@(() => ShowEditUserModal(user))"
+                                              ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small"
+                                              title="Edit User" class="me-1" />
+                                <RadzenButton Icon="delete" Click="@(() => ConfirmDeleteUser(user))"
+                                              ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small"
+                                              title="Delete User" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
             </div>
         </div>
-    </div>
-}
-
-<!-- Modal: Delete Confirmation -->
-@if (isDeleteModalVisible)
-{
-    <div class="custom-modal-backdrop">
-        <div class="custom-modal-content" style="max-width: 450px;">
-            <div class="auth-header bg-danger py-3 px-4 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, var(--danger) 0%, var(--danger-hover) 100%);">
-                <h4 class="fw-bold mb-0">Confirm Deletion</h4>
-                <button type="button" class="btn-close btn-close-white" @onclick="CloseDeleteModal"></button>
-            </div>
-            <div class="auth-body p-4 text-center">
-                <i class="bi bi-exclamation-octagon-fill text-danger mb-3" style="font-size: 3rem;"></i>
-                <h5 class="fw-bold mb-2">Delete Account?</h5>
-                <p class="text-secondary small mb-4">
-                    Are you sure you want to delete user <strong>@userToDelete?.FullName</strong> (@@@userToDelete?.Username)?
-                    This action is permanent and cannot be undone.
-                </p>
-                <div class="d-flex justify-content-center gap-2">
-                    <button type="button" class="btn btn-secondary-custom px-4" @onclick="CloseDeleteModal">Cancel</button>
-                    <button type="button" class="btn btn-danger py-2 px-4 fw-semibold shadow-sm border-0" style="border-radius: 8px; background-color: var(--danger);" @onclick="DeleteUser">
-                        Delete Permanently
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
     </Authorized>
     <NotAuthorized>
-        <!-- Premium Loader during pre-render session loading -->
-        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 80vh;">
-            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                <span class="visually-hidden">Loading...</span>
-            </div>
+        <div class="d-flex flex-column align-items-center justify-content-center portal-loading-container">
+            <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate"
+                                       Size="ProgressBarCircularSize.Large" />
             <p class="mt-3 text-secondary fw-semibold">Loading Admin Portal...</p>
         </div>
     </NotAuthorized>
@@ -376,19 +233,20 @@
     private string searchTerm = string.Empty;
     private string roleFilter = "All";
 
-    // Analytics Counts
+    private readonly List<string> roleOptions = ["All", "Admin", "Teacher", "Student"];
+
     private int totalUsersCount;
     private int studentsCount;
     private int teachersCount;
     private int adminsCount;
 
-    // Modals State
-    private bool isUserModalVisible;
-    private bool isDeleteModalVisible;
-    private User editingUser = new();
-    private string newUserPassword = string.Empty;
-    private User? userToDelete;
-    private string? modalErrorMessage;
+    private List<RoleChartItem> roleChartData = new();
+
+    public class RoleChartItem
+    {
+        public string Role { get; set; } = string.Empty;
+        public int Count { get; set; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -408,9 +266,7 @@
             {
                 var role = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
                 if (role != "Admin")
-                {
                     Navigation.NavigateTo("/login");
-                }
             }
         }
     }
@@ -418,12 +274,17 @@
     private async Task LoadUsersAsync()
     {
         allUsers = await UserService.GetAllUsersAsync();
-        
-        // Calculate analytics
         totalUsersCount = allUsers.Count;
         studentsCount = allUsers.Count(u => u.Role == UserRole.Student);
         teachersCount = allUsers.Count(u => u.Role == UserRole.Teacher);
         adminsCount = allUsers.Count(u => u.Role == UserRole.Admin);
+
+        roleChartData = new List<RoleChartItem>
+        {
+            new() { Role = "Students", Count = studentsCount },
+            new() { Role = "Teachers", Count = teachersCount },
+            new() { Role = "Admins", Count = adminsCount }
+        };
 
         FilterUsers();
     }
@@ -432,16 +293,15 @@
     {
         var result = allUsers.AsEnumerable();
 
-        // Search text filter
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             var search = searchTerm.ToLower();
-            result = result.Where(u => (u.FullName != null && u.FullName.ToLower().Contains(search)) || 
-                                       (u.Username != null && u.Username.ToLower().Contains(search)) ||
-                                       (u.Email != null && u.Email.ToLower().Contains(search)));
+            result = result.Where(u =>
+                (u.FullName != null && u.FullName.ToLower().Contains(search)) ||
+                (u.Username != null && u.Username.ToLower().Contains(search)) ||
+                (u.Email != null && u.Email.ToLower().Contains(search)));
         }
 
-        // Role filter
         if (roleFilter != "All")
         {
             var role = Enum.Parse<UserRole>(roleFilter);
@@ -451,26 +311,23 @@
         filteredUsers = result.ToList();
     }
 
-    private void OnRoleFilterChanged(ChangeEventArgs e)
+    private async Task ShowAddUserModal()
     {
-        roleFilter = e.Value?.ToString() ?? "All";
-        FilterUsers();
+        var user = new User { Role = UserRole.Student };
+        var result = await DialogService.OpenAsync<UserDialog>("Add New User",
+            new Dictionary<string, object?> { { "User", user } },
+            new DialogOptions { Width = "600px", Resizable = false, CloseDialogOnOverlayClick = true });
+
+        if (result == true)
+        {
+            await LoadUsersAsync();
+        }
     }
 
-    // Modal Control: Add
-    private void ShowAddUserModal()
+    private async Task ShowEditUserModal(User user)
     {
-        editingUser = new User { Role = UserRole.Student };
-        newUserPassword = string.Empty;
-        modalErrorMessage = null;
-        isUserModalVisible = true;
-    }
-
-    // Modal Control: Edit
-    private void ShowEditUserModal(User user)
-    {
-        // Shallow copy for editing so original record isn't affected until saved
-        editingUser = new User
+        // Clone the user to prevent data updates on the grid prior to DB save
+        var userClone = new User
         {
             Id = user.Id,
             Username = user.Username,
@@ -487,75 +344,43 @@
             Bio = user.Bio,
             OfficeRoom = user.OfficeRoom
         };
-        modalErrorMessage = null;
-        isUserModalVisible = true;
-    }
 
-    private void CloseUserModal()
-    {
-        isUserModalVisible = false;
-        editingUser = new User();
-        newUserPassword = string.Empty;
-    }
+        var result = await DialogService.OpenAsync<UserDialog>("Edit User Profile",
+            new Dictionary<string, object?> { { "User", userClone } },
+            new DialogOptions { Width = "600px", Resizable = false, CloseDialogOnOverlayClick = true });
 
-    // Save
-    private async Task SaveUser()
-    {
-        modalErrorMessage = null;
-        try
+        if (result == true)
         {
-            if (editingUser.Id == 0)
-            {
-                if (string.IsNullOrWhiteSpace(newUserPassword))
-                {
-                    modalErrorMessage = "Password is required for new users.";
-                    return;
-                }
-                
-                await UserService.RegisterAsync(editingUser, newUserPassword);
-            }
-            else
-            {
-                await UserService.UpdateUserAsync(editingUser);
-            }
-
-            CloseUserModal();
             await LoadUsersAsync();
         }
-        catch (Exception ex)
-        {
-            modalErrorMessage = ex.Message;
-        }
     }
 
-    // Delete Flow
-    private void ConfirmDeleteUser(User user)
+    private async Task ConfirmDeleteUser(User user)
     {
-        userToDelete = user;
-        isDeleteModalVisible = true;
-    }
+        var confirm = await DialogService.Confirm(
+            $"Are you sure you want to delete {user.FullName} (@{user.Username})? This action is permanent and cannot be undone.",
+            "Delete User Account",
+            new ConfirmOptions { OkButtonText = "Delete Permanently", CancelButtonText = "Cancel" });
 
-    private void CloseDeleteModal()
-    {
-        isDeleteModalVisible = false;
-        userToDelete = null;
-    }
-
-    private async Task DeleteUser()
-    {
-        if (userToDelete != null)
+        if (confirm == true)
         {
             try
             {
-                await UserService.DeleteUserAsync(userToDelete.Id);
-                CloseDeleteModal();
+                await UserService.DeleteUserAsync(user.Id);
                 await LoadUsersAsync();
+                NotificationService.Notify(NotificationSeverity.Warning, "Deleted", "User has been removed.");
             }
             catch (Exception ex)
             {
-                // Simple logging or feedback
-                Console.WriteLine($"Error deleting user: {ex.Message}");
+                NotificationService.Notify(NotificationSeverity.Error, "Error", $"Could not delete user: {ex.Message}");
             }
         }
     }
+
+    private string GetRoleIconStyle(UserRole role) => role switch
+    {
+        UserRole.Admin => "background-color:#fef2f2;color:#b91c1c;",
+        UserRole.Teacher => "background-color:#fffbeb;color:#b45309;",
+        _ => "background-color:#eff6ff;color:#1d4ed8;"
+    };
 }
