@@ -25,6 +25,7 @@
     <RadzenComponents @rendermode="InteractiveServer" />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <script>
         window.downloadFileFromBytes = (filename, contentBase64) => {
             const link = document.createElement('a');
@@ -33,6 +34,72 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        };
+
+        const FACE_MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
+        let faceModelsLoaded = false;
+        let attendanceLoop = null;
+        let activeStream = null;
+
+        window.loadFaceApiModels = async () => {
+            if (faceModelsLoaded) return;
+            await Promise.all([
+                faceapi.loadTinyFaceDetectorModel(FACE_MODEL_URL),
+                faceapi.loadFaceLandmarkTinyModel(FACE_MODEL_URL),
+                faceapi.loadFaceRecognitionModel(FACE_MODEL_URL)
+            ]);
+            faceModelsLoaded = true;
+        };
+
+        window.extractFaceDescriptor = async (dataUrl) => {
+            await window.loadFaceApiModels();
+            const img = await faceapi.fetchImage(dataUrl);
+            const detection = await faceapi
+                .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+                .withFaceLandmarks(true)
+                .withFaceDescriptor();
+            return detection ? Array.from(detection.descriptor) : null;
+        };
+
+        window.startAutoAttendance = async (videoId, descriptorsJson, dotNetRef) => {
+            await window.loadFaceApiModels();
+            const entries = JSON.parse(descriptorsJson);
+            if (entries.length === 0) return;
+            const labeled = entries.map(d =>
+                new faceapi.LabeledFaceDescriptors(String(d.studentId), [new Float32Array(d.descriptor)])
+            );
+            const matcher = new faceapi.FaceMatcher(labeled, 0.55);
+            const video = document.getElementById(videoId);
+            activeStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = activeStream;
+            await new Promise(r => { video.onloadedmetadata = r; });
+            video.play();
+            attendanceLoop = setInterval(async () => {
+                const detections = await faceapi
+                    .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceLandmarks(true)
+                    .withFaceDescriptors();
+                for (const d of detections) {
+                    const match = matcher.findBestMatch(d.descriptor);
+                    if (match.label !== 'unknown') {
+                        await dotNetRef.invokeMethodAsync('OnFaceDetected', parseInt(match.label));
+                    }
+                }
+            }, 1200);
+        };
+
+        window.stopAutoAttendance = () => {
+            if (attendanceLoop) { clearInterval(attendanceLoop); attendanceLoop = null; }
+            if (activeStream) { activeStream.getTracks().forEach(t => t.stop()); activeStream = null; }
+        };
+
+        window.readFileAsDataUrl = (inputFile) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(inputFile);
+            });
         };
     </script>
 </body>

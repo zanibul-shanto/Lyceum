@@ -54,7 +54,8 @@ public class StudentService(LyceumDbContext context, UserManager<User> userManag
     }
 
     public async Task<Student> CreateAsync(string fullName, string email, string username, string password,
-        DateTime? dateOfBirth, string? gender, string? phone, string? address)
+        DateTime? dateOfBirth, string? gender, string? phone, string? address,
+        string? photoUrl = null, string? faceDescriptor = null)
     {
         var user = new User
         {
@@ -79,7 +80,9 @@ public class StudentService(LyceumDbContext context, UserManager<User> userManag
             Gender = gender,
             Phone = phone,
             Address = address,
-            EnrollmentDate = DateTime.UtcNow
+            EnrollmentDate = DateTime.UtcNow,
+            PhotoUrl = photoUrl,
+            FaceDescriptor = faceDescriptor
         };
 
         context.Students.Add(student);
@@ -97,6 +100,7 @@ public class StudentService(LyceumDbContext context, UserManager<User> userManag
         existing.Phone = student.Phone;
         existing.Address = student.Address;
         existing.PhotoUrl = student.PhotoUrl;
+        existing.FaceDescriptor = student.FaceDescriptor;
         existing.User.FullName = student.User.FullName;
         existing.User.Email = student.User.Email;
         existing.User.UpdatedAt = DateTime.UtcNow;

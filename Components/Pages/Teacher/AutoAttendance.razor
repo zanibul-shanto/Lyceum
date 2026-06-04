@@ -1,0 +1,359 @@
+@page "/teacher/auto-attendance"
+@inject TeacherService TeacherService
+@inject EnrollmentService EnrollmentService
+@inject AttendanceService AttendanceService
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject NotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+<PageTitle>AI Attendance - Lyceum</PageTitle>
+
+<AuthorizeView Roles="Teacher">
+    <Authorized>
+        <div class="container-fluid py-4 px-xl-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1 page-title-modern text-white">AI Attendance</h3>
+                    <p class="page-subtitle-modern mb-0 text-secondary">Webcam-based automatic face recognition attendance.</p>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(pageError))
+            {
+                <div class="alert alert-danger border-0 mb-3">@pageError</div>
+            }
+
+            <div class="row g-4">
+                <!-- Left: controls + webcam -->
+                <div class="col-12 col-lg-6">
+                    <div class="dashboard-card p-4 mb-4">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-12">
+                                <label class="form-label text-secondary fw-semibold small">Select Course</label>
+                                <RadzenDropDown TValue="int?" Value="@selectedCourseId" Data="@assignedCourses"
+                                                TextProperty="Name" ValueProperty="Id"
+                                                Change="@(args => OnCourseChanged((int?)args))"
+                                                Placeholder="Choose a course..." class="w-100" />
+                            </div>
+                            @if (selectedCourseId.HasValue)
+                            {
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label text-secondary fw-semibold small">Session Date</label>
+                                    <RadzenDatePicker TValue="DateTime" @bind-Value="sessionDate" DateFormat="yyyy-MM-dd" class="w-100" />
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label text-secondary fw-semibold small">Start</label>
+                                    <RadzenDatePicker TValue="DateTime?" @bind-Value="startTime" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" class="w-100" />
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label text-secondary fw-semibold small">End</label>
+                                    <RadzenDatePicker TValue="DateTime?" @bind-Value="endTime" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" class="w-100" />
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    @if (selectedCourseId.HasValue)
+                    {
+                        <div class="dashboard-card p-4">
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <i class="bi bi-camera-video-fill text-primary"></i>
+                                <span class="fw-semibold">Webcam Feed</span>
+                                @if (studentsWithDescriptor.Count == 0)
+                                {
+                                    <span class="badge bg-warning text-dark ms-auto">No face data registered</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success ms-auto">@studentsWithDescriptor.Count student(s) registered</span>
+                                }
+                            </div>
+
+                            <div class="rounded overflow-hidden mb-3 bg-dark" style="aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;">
+                                <video id="attendanceVideo" autoplay playsinline muted
+                                       style="width:100%;height:100%;object-fit:cover;@(isCameraRunning ? "" : "display:none;")" />
+                                @if (!isCameraRunning)
+                                {
+                                    <div class="text-center text-secondary p-4">
+                                        <i class="bi bi-camera-video-off" style="font-size:3rem;"></i>
+                                        <div class="mt-2 small">Camera not started</div>
+                                    </div>
+                                }
+                            </div>
+
+                            @if (statusMessage != null)
+                            {
+                                <div class="alert alert-info py-2 small mb-3">@statusMessage</div>
+                            }
+
+                            <div class="d-flex gap-2 flex-wrap">
+                                @if (!isCameraRunning)
+                                {
+                                    <RadzenButton Text="Start Camera" Icon="play_arrow" ButtonStyle="ButtonStyle.Primary"
+                                                  Click="StartCamera" Disabled="@(studentsWithDescriptor.Count == 0)" />
+                                }
+                                else
+                                {
+                                    <RadzenButton Text="Stop Camera" Icon="stop" ButtonStyle="ButtonStyle.Danger"
+                                                  Click="StopCamera" />
+                                }
+                                <RadzenButton Text="Save Attendance" Icon="save" ButtonStyle="ButtonStyle.Success"
+                                              Click="SaveAttendance" Disabled="@(studentStatuses.Count == 0)" />
+                            </div>
+
+                            @if (studentsWithDescriptor.Count == 0 && roster.Count > 0)
+                            {
+                                <div class="alert alert-warning mt-3 py-2 small mb-0">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    No students have face photos registered. Ask the admin to upload photos for enrolled students to enable AI recognition.
+                                    You can still manually adjust statuses and save.
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- Right: student roster -->
+                <div class="col-12 col-lg-6">
+                    @if (selectedCourseId.HasValue && roster.Count > 0)
+                    {
+                        <div class="dashboard-card p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-people-fill text-primary me-2"></i>
+                                <span class="fw-semibold">Student Roster</span>
+                                <span class="badge bg-secondary ms-2">@roster.Count</span>
+                                <div class="ms-auto d-flex gap-2">
+                                    <small class="text-success"><i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i>@studentStatuses.Count(s => s.Value == AttendanceStatus.Present) Present</small>
+                                    <small class="text-danger"><i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i>@studentStatuses.Count(s => s.Value == AttendanceStatus.Absent) Absent</small>
+                                </div>
+                            </div>
+
+                            <div style="max-height:520px;overflow-y:auto;">
+                                @foreach (var student in roster)
+                                {
+                                    var status = studentStatuses.TryGetValue(student.Id, out var s) ? s : AttendanceStatus.Absent;
+                                    var hasDescriptor = student.FaceDescriptor != null;
+                                    <div class="d-flex align-items-center gap-3 p-2 rounded mb-1"
+                                         style="background:@(status == AttendanceStatus.Present ? "rgba(34,197,94,.08)" : "rgba(239,68,68,.05)")">
+                                        @if (!string.IsNullOrEmpty(student.PhotoUrl))
+                                        {
+                                            <img src="@student.PhotoUrl" alt="@student.User?.FullName"
+                                                 style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;" />
+                                        }
+                                        else
+                                        {
+                                            <div style="width:40px;height:40px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                <i class="bi bi-person text-secondary"></i>
+                                            </div>
+                                        }
+                                        <div class="flex-grow-1 min-w-0">
+                                            <div class="fw-semibold small text-truncate">@student.User?.FullName</div>
+                                            <div class="text-secondary" style="font-size:.75rem;">
+                                                @student.StudentCode
+                                                @if (!hasDescriptor)
+                                                {
+                                                    <span class="text-warning ms-1" title="No face registered"><i class="bi bi-exclamation-triangle-fill"></i></span>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-1">
+                                            <button class="btn btn-sm @(status == AttendanceStatus.Present ? "btn-success" : "btn-outline-success")"
+                                                    style="font-size:.7rem;padding:.2rem .5rem;"
+                                                    @onclick="() => SetStatus(student.Id, AttendanceStatus.Present)">P</button>
+                                            <button class="btn btn-sm @(status == AttendanceStatus.Absent ? "btn-danger" : "btn-outline-danger")"
+                                                    style="font-size:.7rem;padding:.2rem .5rem;"
+                                                    @onclick="() => SetStatus(student.Id, AttendanceStatus.Absent)">A</button>
+                                            <button class="btn btn-sm @(status == AttendanceStatus.Late ? "btn-warning" : "btn-outline-warning")"
+                                                    style="font-size:.7rem;padding:.2rem .5rem;"
+                                                    @onclick="() => SetStatus(student.Id, AttendanceStatus.Late)">L</button>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else if (selectedCourseId.HasValue)
+                    {
+                        <div class="dashboard-card p-4 text-center text-secondary">
+                            <i class="bi bi-people" style="font-size:2.5rem;"></i>
+                            <div class="mt-2">No active students enrolled in this course.</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="d-flex align-items-center justify-content-center" style="min-height:60vh;">
+            <div class="text-center text-secondary">
+                <i class="bi bi-lock" style="font-size:3rem;"></i>
+                <div class="mt-2">Access denied.</div>
+            </div>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private Teacher? currentTeacher;
+    private List<Course> assignedCourses = [];
+    private List<Student> roster = [];
+    private List<Student> studentsWithDescriptor = [];
+    private Dictionary<int, AttendanceStatus> studentStatuses = [];
+
+    private int? selectedCourseId;
+    private DateTime sessionDate = DateTime.Today;
+    private DateTime? startTime;
+    private DateTime? endTime;
+
+    private bool isCameraRunning;
+    private string? pageError;
+    private string? statusMessage;
+
+    private DotNetObjectReference<AutoAttendance>? dotNetRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var userIdStr = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(userIdStr, out int userId))
+            {
+                currentTeacher = await TeacherService.GetByUserIdAsync(userId);
+                if (currentTeacher != null)
+                    assignedCourses = currentTeacher.CourseTeachers.Select(ct => ct.Course).ToList();
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated != true ||
+                authState.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value != "Teacher")
+            {
+                Navigation.NavigateTo("/login");
+            }
+        }
+    }
+
+    private async Task OnCourseChanged(int? courseId)
+    {
+        await StopCamera();
+        selectedCourseId = courseId;
+        roster.Clear();
+        studentStatuses.Clear();
+        studentsWithDescriptor.Clear();
+
+        if (!selectedCourseId.HasValue) return;
+
+        var enrollments = await EnrollmentService.GetByCourseAsync(selectedCourseId.Value);
+        roster = enrollments
+            .Where(e => e.Status == EnrollmentStatus.Active && e.Student != null)
+            .Select(e => e.Student)
+            .ToList();
+
+        studentStatuses = roster.ToDictionary(s => s.Id, _ => AttendanceStatus.Absent);
+        studentsWithDescriptor = roster.Where(s => !string.IsNullOrEmpty(s.FaceDescriptor)).ToList();
+    }
+
+    private async Task StartCamera()
+    {
+        pageError = null;
+        statusMessage = "Loading face recognition models...";
+        StateHasChanged();
+
+        try
+        {
+            dotNetRef?.Dispose();
+            dotNetRef = DotNetObjectReference.Create(this);
+
+            var descriptors = studentsWithDescriptor.Select(s => new
+            {
+                studentId = s.Id,
+                descriptor = System.Text.Json.JsonSerializer.Deserialize<float[]>(s.FaceDescriptor!)
+            }).ToList();
+
+            var descriptorsJson = System.Text.Json.JsonSerializer.Serialize(descriptors);
+            await JSRuntime.InvokeVoidAsync("startAutoAttendance", "attendanceVideo", descriptorsJson, dotNetRef);
+            isCameraRunning = true;
+            statusMessage = "Camera running — show student faces to the camera.";
+        }
+        catch (Exception ex)
+        {
+            pageError = $"Could not start camera: {ex.Message}";
+            statusMessage = null;
+        }
+    }
+
+    private async Task StopCamera()
+    {
+        if (isCameraRunning)
+        {
+            await JSRuntime.InvokeVoidAsync("stopAutoAttendance");
+            isCameraRunning = false;
+            statusMessage = null;
+        }
+    }
+
+    [JSInvokable]
+    public void OnFaceDetected(int studentId)
+    {
+        if (studentStatuses.ContainsKey(studentId) && studentStatuses[studentId] != AttendanceStatus.Present)
+        {
+            studentStatuses[studentId] = AttendanceStatus.Present;
+            var student = roster.FirstOrDefault(s => s.Id == studentId);
+            if (student != null)
+                statusMessage = $"Recognized: {student.User?.FullName}";
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void SetStatus(int studentId, AttendanceStatus status)
+    {
+        studentStatuses[studentId] = status;
+    }
+
+    private async Task SaveAttendance()
+    {
+        if (!selectedCourseId.HasValue || currentTeacher == null) return;
+
+        try
+        {
+            await StopCamera();
+
+            TimeOnly? start = startTime.HasValue ? TimeOnly.FromDateTime(startTime.Value) : null;
+            TimeOnly? end = endTime.HasValue ? TimeOnly.FromDateTime(endTime.Value) : null;
+
+            var session = await AttendanceService.CreateSessionAsync(
+                selectedCourseId.Value, currentTeacher.Id, sessionDate, start, end);
+
+            var records = studentStatuses.Select(kvp => (StudentId: kvp.Key, Status: kvp.Value)).ToList();
+            await AttendanceService.MarkAttendanceAsync(session.Id, records);
+
+            int presentCount = records.Count(r => r.Status == AttendanceStatus.Present);
+            NotificationService.Notify(NotificationSeverity.Success, "Saved",
+                $"Attendance saved — {presentCount}/{records.Count} present.");
+
+            studentStatuses = roster.ToDictionary(s => s.Id, _ => AttendanceStatus.Absent);
+            sessionDate = DateTime.Today;
+            startTime = null;
+            endTime = null;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Could not save: {ex.Message}");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await StopCamera();
+        dotNetRef?.Dispose();
+    }
+}

@@ -28,6 +28,8 @@ public class Student
     [StringLength(500)]
     public string? PhotoUrl { get; set; }
 
+    public string? FaceDescriptor { get; set; }
+
     // Navigation
     public ICollection<StudentEnrollment> Enrollments { get; set; } = [];
     public ICollection<AttendanceRecord> AttendanceRecords { get; set; } = [];

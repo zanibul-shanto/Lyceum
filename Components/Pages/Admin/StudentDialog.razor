@@ -1,6 +1,8 @@
 @inject StudentService StudentService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
+@inject IWebHostEnvironment WebHostEnvironment
+@inject IJSRuntime JSRuntime
 
 <div class="p-3">
     @if (!string.IsNullOrEmpty(modalError))
@@ -10,6 +12,39 @@
 
     <EditForm Model="FormModel" OnValidSubmit="SaveStudent" FormName="StudentDialogForm">
         <DataAnnotationsValidator />
+
+        <!-- Photo upload -->
+        <div class="d-flex flex-column align-items-center mb-4">
+            <div class="position-relative" style="width:96px;height:96px;">
+                @if (!string.IsNullOrEmpty(FormModel.PhotoUrl))
+                {
+                    <img src="@FormModel.PhotoUrl" alt="Photo"
+                         style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid var(--primary);" />
+                }
+                else
+                {
+                    <div style="width:96px;height:96px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;border:3px solid var(--border);">
+                        <i class="bi bi-person-circle" style="font-size:3rem;color:var(--text-muted);"></i>
+                    </div>
+                }
+                <label for="studentPhotoInput" class="position-absolute bottom-0 end-0 btn btn-sm btn-primary rounded-circle p-1" style="cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;" title="Upload photo">
+                    <i class="bi bi-camera-fill" style="font-size:.75rem;"></i>
+                </label>
+            </div>
+            <InputFile id="studentPhotoInput" OnChange="OnPhotoSelected" accept="image/*" style="display:none;" />
+            @if (isUploadingPhoto)
+            {
+                <small class="text-secondary mt-1">Processing photo...</small>
+            }
+            else if (!string.IsNullOrEmpty(FormModel.FaceDescriptor))
+            {
+                <small class="text-success mt-1"><i class="bi bi-check-circle-fill me-1"></i>Face registered for AI attendance</small>
+            }
+            else if (!string.IsNullOrEmpty(FormModel.PhotoUrl))
+            {
+                <small class="text-warning mt-1"><i class="bi bi-exclamation-circle me-1"></i>No face detected in photo</small>
+            }
+        </div>
 
         <div class="row g-3">
             <div class="col-12 col-md-6">
@@ -70,7 +105,7 @@
 
         <div class="d-flex justify-content-end gap-2 mt-4">
             <RadzenButton Text="Cancel" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
-            <RadzenButton ButtonType="ButtonType.Submit" Text="Save Student" Icon="save" ButtonStyle="ButtonStyle.Primary" />
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Save Student" Icon="save" ButtonStyle="ButtonStyle.Primary" IsBusy="isUploadingPhoto" />
         </div>
     </EditForm>
 </div>
@@ -80,6 +115,9 @@
 
     private StudentFormModel FormModel { get; set; } = new();
     private string? modalError;
+    private bool isUploadingPhoto;
+
+    private static readonly HashSet<string> AllowedExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
 
     protected override void OnInitialized()
     {
@@ -93,13 +131,75 @@
                 DateOfBirth = Student.DateOfBirth,
                 Gender = Student.Gender,
                 Phone = Student.Phone,
-                Address = Student.Address
+                Address = Student.Address,
+                PhotoUrl = Student.PhotoUrl,
+                FaceDescriptor = Student.FaceDescriptor
             };
         }
         else
         {
             FormModel = new StudentFormModel();
         }
+    }
+
+    private async Task OnPhotoSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        var ext = Path.GetExtension(file.Name).ToLower();
+        if (!AllowedExtensions.Contains(ext))
+        {
+            modalError = "Only image files (jpg, png, gif, webp) are allowed.";
+            return;
+        }
+        if (file.Size > 5 * 1024 * 1024)
+        {
+            modalError = "Photo must be smaller than 5 MB.";
+            return;
+        }
+
+        modalError = null;
+        isUploadingPhoto = true;
+        StateHasChanged();
+
+        try
+        {
+            var filename = $"{Guid.NewGuid()}{ext}";
+            var dir = Path.Combine(WebHostEnvironment.WebRootPath, "uploads", "photos");
+            Directory.CreateDirectory(dir);
+            var fullPath = Path.Combine(dir, filename);
+
+            await using (var fs = File.Create(fullPath))
+            await using (var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024))
+                await stream.CopyToAsync(fs);
+
+            FormModel.PhotoUrl = $"/uploads/photos/{filename}";
+
+            // Extract face descriptor via JS interop
+            var dataUrl = await ReadFileAsDataUrl(file);
+            var descriptor = await JSRuntime.InvokeAsync<float[]?>("extractFaceDescriptor", dataUrl);
+            FormModel.FaceDescriptor = descriptor != null
+                ? System.Text.Json.JsonSerializer.Serialize(descriptor)
+                : null;
+        }
+        catch (Exception ex)
+        {
+            modalError = $"Photo upload failed: {ex.Message}";
+        }
+        finally
+        {
+            isUploadingPhoto = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<string> ReadFileAsDataUrl(IBrowserFile file)
+    {
+        await using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+        var bytes = new byte[file.Size];
+        await stream.ReadExactlyAsync(bytes);
+        var base64 = Convert.ToBase64String(bytes);
+        var mime = file.ContentType ?? "image/jpeg";
+        return $"data:{mime};base64,{base64}";
     }
 
     private async Task SaveStudent()
@@ -115,7 +215,6 @@
                     return;
                 }
 
-                // Auto-generate username from email prefix
                 var emailParts = FormModel.Email.Split('@');
                 if (emailParts.Length < 2)
                 {
@@ -132,7 +231,9 @@
                     FormModel.DateOfBirth,
                     FormModel.Gender,
                     FormModel.Phone,
-                    FormModel.Address
+                    FormModel.Address,
+                    FormModel.PhotoUrl,
+                    FormModel.FaceDescriptor
                 );
             }
             else
@@ -145,6 +246,8 @@
                     Student.Gender = FormModel.Gender;
                     Student.Phone = FormModel.Phone;
                     Student.Address = FormModel.Address;
+                    Student.PhotoUrl = FormModel.PhotoUrl;
+                    Student.FaceDescriptor = FormModel.FaceDescriptor;
 
                     await StudentService.UpdateAsync(Student);
                 }
@@ -184,5 +287,8 @@
 
         [StringLength(300, ErrorMessage = "Address cannot exceed 300 characters")]
         public string? Address { get; set; }
+
+        public string? PhotoUrl { get; set; }
+        public string? FaceDescriptor { get; set; }
     }
 }

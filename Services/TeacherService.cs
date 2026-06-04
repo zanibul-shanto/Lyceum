@@ -48,7 +48,8 @@ public class TeacherService(LyceumDbContext context, UserManager<User> userManag
     }
 
     public async Task<Teacher> CreateAsync(string fullName, string email, string username, string password,
-        string? department, string? qualification, string? phone, string? officeRoom, string? bio)
+        string? department, string? qualification, string? phone, string? officeRoom, string? bio,
+        string? photoUrl = null)
     {
         var user = new User
         {
@@ -74,6 +75,7 @@ public class TeacherService(LyceumDbContext context, UserManager<User> userManag
             Phone = phone,
             OfficeRoom = officeRoom,
             Bio = bio,
+            PhotoUrl = photoUrl,
             JoiningDate = DateTime.UtcNow
         };
 
@@ -92,6 +94,7 @@ public class TeacherService(LyceumDbContext context, UserManager<User> userManag
         existing.Phone = teacher.Phone;
         existing.OfficeRoom = teacher.OfficeRoom;
         existing.Bio = teacher.Bio;
+        existing.PhotoUrl = teacher.PhotoUrl;
         existing.User.FullName = teacher.User.FullName;
         existing.User.Email = teacher.User.Email;
         existing.User.UpdatedAt = DateTime.UtcNow;
