@@ -202,14 +202,7 @@
             var pdfBytes = await ReportService.GenerateStudentGradeReportAsync(currentStudent.Id);
             var base64 = Convert.ToBase64String(pdfBytes);
             var filename = $"Lyceum_Grade_Report_{currentStudent.StudentCode}.pdf";
-            
-            await JSRuntime.InvokeVoidAsync("eval", 
-                $"const link = document.createElement('a');" +
-                $"link.download = '{filename}';" +
-                $"link.href = 'data:application/pdf;base64,{base64}';" +
-                $"document.body.appendChild(link);" +
-                $"link.click();" +
-                $"document.body.removeChild(link);");
+            await JSRuntime.InvokeVoidAsync("downloadFileFromBytes", filename, base64);
         }
         catch (Exception ex)
         {

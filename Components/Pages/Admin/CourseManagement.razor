@@ -148,8 +148,10 @@
                             </Template>
                         </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="Course" Title="" Width="110px" Sortable="false" TextAlign="TextAlign.End">
+                        <RadzenDataGridColumn TItem="Course" Title="" Width="155px" Sortable="false" TextAlign="TextAlign.End">
                             <Template Context="course">
+                                <RadzenButton Icon="people" Click="@(() => ShowEnrollmentModal(course))"
+                                              ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Small" class="me-1" title="Manage Enrollments" />
                                 <RadzenButton Icon="edit" Click="@(() => ShowEditModal(course))"
                                               ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" class="me-1" />
                                 <RadzenButton Icon="delete" Click="@(() => ConfirmDelete(course))"
@@ -223,6 +225,15 @@
             result = result.Where(c => !c.IsActive);
 
         filteredCourses = result.ToList();
+    }
+
+    private async Task ShowEnrollmentModal(Course course)
+    {
+        await DialogService.OpenAsync<EnrollmentDialog>($"Manage Enrollments — {course.Name}",
+            new Dictionary<string, object?> { { "CourseId", course.Id } },
+            new DialogOptions { Width = "720px", Resizable = false, CloseDialogOnOverlayClick = true });
+
+        await LoadDataAsync();
     }
 
     private async Task ShowAddModal()

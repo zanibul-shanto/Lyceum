@@ -24,7 +24,8 @@ builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
     options.SignIn.RequireConfirmedAccount = false;
 })
 .AddEntityFrameworkStores<LyceumDbContext>()
-.AddDefaultTokenProviders();
+.AddDefaultTokenProviders()
+.AddClaimsPrincipalFactory<LyceumUserClaimsPrincipalFactory>();
 
 // Cookie configuration
 builder.Services.ConfigureApplicationCookie(options =>

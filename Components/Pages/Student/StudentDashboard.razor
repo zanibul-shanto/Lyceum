@@ -3,6 +3,7 @@
 @inject StudentService StudentService
 @inject AttendanceService AttendanceService
 @inject GradeService GradeService
+@inject SystemSettingService SystemSettingService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 
@@ -15,7 +16,7 @@
             <div class="premium-page-header">
                 <div>
                     <h1 class="page-title-modern">Dashboard</h1>
-                    <div class="page-subtitle-modern">Academic Year: 2025-2026</div>
+                    <div class="page-subtitle-modern">Academic Year: @academicYear</div>
                 </div>
                 <div class="header-right-block">
                     <!-- Outlined Header Profile Card matching design -->
@@ -182,6 +183,7 @@
 
 @code {
     private Student? currentStudent;
+    private string academicYear = string.Empty;
     private int enrolledCoursesCount;
     private int enrolledCreditsCount;
     private double gpa;
@@ -191,12 +193,14 @@
 
     protected override async Task OnInitializedAsync()
     {
+        academicYear = await SystemSettingService.GetAsync("AcademicYear")
+            ?? $"{DateTime.UtcNow.Year}-{DateTime.UtcNow.Year + 1}";
+
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var username = authState.User.Identity?.Name;
 
         if (!string.IsNullOrEmpty(username))
         {
-            // Get Student by user ID from claim or username
             var userIdClaim = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
             {

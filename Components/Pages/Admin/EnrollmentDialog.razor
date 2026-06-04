@@ -1,0 +1,175 @@
+@inject StudentService StudentService
+@inject EnrollmentService EnrollmentService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<div class="p-3">
+    @if (loading)
+    {
+        <div class="d-flex justify-content-center my-4">
+            <RadzenProgressBarCircular Value="100" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <!-- Enrolled Students -->
+            <div class="col-12 col-md-6">
+                <h6 class="fw-bold text-dark mb-3">
+                    <i class="bi bi-person-check-fill text-success me-2"></i>Enrolled Students
+                    <span class="badge bg-success-subtle text-success ms-1">@enrolledStudents.Count</span>
+                </h6>
+                @if (!enrolledStudents.Any())
+                {
+                    <p class="text-secondary small">No students enrolled yet.</p>
+                }
+                else
+                {
+                    <div class="list-group list-group-flush" style="max-height: 380px; overflow-y: auto;">
+                        @foreach (var e in enrolledStudents)
+                        {
+                            <div class="list-group-item px-0 py-2 bg-transparent border-bottom d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold text-dark small">@e.Student.User?.FullName</div>
+                                    <div class="text-secondary" style="font-size: 0.78rem;">@e.Student.StudentCode</div>
+                                </div>
+                                <RadzenButton Icon="person_remove" Text="Drop"
+                                              ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall"
+                                              Click="@(() => DropStudent(e))" />
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Available Students -->
+            <div class="col-12 col-md-6">
+                <h6 class="fw-bold text-dark mb-3">
+                    <i class="bi bi-person-plus-fill text-primary me-2"></i>Available Students
+                    <span class="badge bg-primary-subtle text-primary ms-1">@availableStudents.Count</span>
+                </h6>
+                @if (!availableStudents.Any())
+                {
+                    <p class="text-secondary small">All active students are already enrolled.</p>
+                }
+                else
+                {
+                    <div class="mb-2">
+                        <input type="text" class="form-control form-control-sm form-control-custom"
+                               placeholder="Search students..." @oninput="OnSearch" />
+                    </div>
+                    <div class="list-group list-group-flush" style="max-height: 340px; overflow-y: auto;">
+                        @foreach (var s in filteredAvailable)
+                        {
+                            <div class="list-group-item px-0 py-2 bg-transparent border-bottom d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold text-dark small">@s.User?.FullName</div>
+                                    <div class="text-secondary" style="font-size: 0.78rem;">@s.StudentCode</div>
+                                </div>
+                                <RadzenButton Icon="person_add" Text="Enroll"
+                                              ButtonStyle="ButtonStyle.Success" Size="ButtonSize.ExtraSmall"
+                                              Click="@(() => EnrollStudent(s))" />
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-4">
+            <RadzenButton Text="Close" Click="@(() => DialogService.Close(true))" ButtonStyle="ButtonStyle.Secondary" />
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int CourseId { get; set; }
+
+    private bool loading = true;
+    private List<StudentEnrollment> enrolledStudents = new();
+    private List<Student> availableStudents = new();
+    private List<Student> filteredAvailable = new();
+    private string searchTerm = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        loading = true;
+        try
+        {
+            var allStudents = await StudentService.GetAllAsync();
+            var allEnrollments = await EnrollmentService.GetByCourseAsync(CourseId);
+
+            enrolledStudents = allEnrollments
+                .Where(e => e.Status == EnrollmentStatus.Active)
+                .ToList();
+
+            var enrolledIds = enrolledStudents.Select(e => e.StudentId).ToHashSet();
+
+            availableStudents = allStudents
+                .Where(s => s.User?.IsActive == true && !enrolledIds.Contains(s.Id))
+                .ToList();
+
+            ApplySearch();
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void OnSearch(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        ApplySearch();
+    }
+
+    private void ApplySearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredAvailable = availableStudents.ToList();
+            return;
+        }
+        var q = searchTerm.Trim().ToLower();
+        filteredAvailable = availableStudents
+            .Where(s =>
+                (s.User?.FullName?.ToLower().Contains(q) ?? false) ||
+                s.StudentCode.ToLower().Contains(q))
+            .ToList();
+    }
+
+    private async Task EnrollStudent(Student student)
+    {
+        try
+        {
+            await EnrollmentService.EnrollAsync(student.Id, CourseId);
+            NotificationService.Notify(NotificationSeverity.Success, "Enrolled",
+                $"{student.User?.FullName} enrolled successfully.");
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+        }
+    }
+
+    private async Task DropStudent(StudentEnrollment enrollment)
+    {
+        try
+        {
+            await EnrollmentService.DropAsync(enrollment.Id);
+            NotificationService.Notify(NotificationSeverity.Warning, "Dropped",
+                $"{enrollment.Student.User?.FullName} dropped from course.");
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+        }
+    }
+}
