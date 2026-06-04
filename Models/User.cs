@@ -35,6 +35,9 @@ public class User : IdentityUser<int>
 
     public DateTime? UpdatedAt { get; set; }
 
+    [StringLength(500)]
+    public string? PhotoUrl { get; set; }
+
     // Navigation
     public Student? Student { get; set; }
     public Teacher? Teacher { get; set; }

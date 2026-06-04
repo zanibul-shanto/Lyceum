@@ -1,0 +1,326 @@
+@page "/profile"
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@inject UserManager<Lyceum.Models.User> UserManager
+@inject SignInManager<Lyceum.Models.User> SignInManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject LyceumDbContext Db
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+@inject IWebHostEnvironment Env
+
+<PageTitle>My Profile - Lyceum</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="container-fluid p-0">
+            <div class="premium-page-header">
+                <div>
+                    <h1 class="page-title-modern">My Profile</h1>
+                    <div class="page-subtitle-modern">Update your personal information and password</div>
+                </div>
+            </div>
+
+            <div class="profile-layout">
+                <!-- Left: Avatar card -->
+                <div class="profile-avatar-card">
+                    <div class="profile-avatar-wrap">
+                        @if (!string.IsNullOrEmpty(_user?.PhotoUrl))
+                        {
+                            <img src="@_user.PhotoUrl" class="profile-avatar-img" alt="Profile photo" />
+                        }
+                        else
+                        {
+                            <span class="profile-avatar-img profile-avatar-initials-lg">@GetInitials(_user?.FullName ?? "")</span>
+                        }
+                        <label class="profile-avatar-upload-btn" title="Change photo">
+                            <i class="bi bi-camera-fill"></i>
+                            <InputFile OnChange="OnPhotoSelected" accept="image/*" style="display:none" />
+                        </label>
+                    </div>
+                    <div class="profile-avatar-name">@_user?.FullName</div>
+                    <div class="profile-avatar-role">@_user?.Role</div>
+                    @if (_photoUploading)
+                    {
+                        <div class="profile-upload-status">Uploading…</div>
+                    }
+                </div>
+
+                <!-- Right: Forms -->
+                <div class="profile-forms">
+                    <!-- Basic Info -->
+                    <div class="dashboard-card profile-section">
+                        <div class="profile-section-title">Basic Information</div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Full Name</label>
+                                <input class="form-control form-control-custom" @bind="_infoModel.FullName" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input class="form-control form-control-custom" @bind="_infoModel.Email" type="email" />
+                            </div>
+                            @if (_user?.Role == Lyceum.Models.UserRole.Student || _user?.Role == Lyceum.Models.UserRole.Teacher)
+                            {
+                                <div class="col-md-6">
+                                    <label class="form-label">Phone</label>
+                                    <input class="form-control form-control-custom" @bind="_infoModel.Phone" />
+                                </div>
+                            }
+                            @if (_user?.Role == Lyceum.Models.UserRole.Student)
+                            {
+                                <div class="col-md-6">
+                                    <label class="form-label">Gender</label>
+                                    <select class="form-control form-control-custom" @bind="_infoModel.Gender">
+                                        <option value="">— select —</option>
+                                        <option>Male</option>
+                                        <option>Female</option>
+                                        <option>Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Address</label>
+                                    <input class="form-control form-control-custom" @bind="_infoModel.Address" />
+                                </div>
+                            }
+                            @if (_user?.Role == Lyceum.Models.UserRole.Teacher)
+                            {
+                                <div class="col-md-6">
+                                    <label class="form-label">Department</label>
+                                    <input class="form-control form-control-custom" @bind="_infoModel.Department" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Bio</label>
+                                    <textarea class="form-control form-control-custom" @bind="_infoModel.Bio" rows="3"></textarea>
+                                </div>
+                            }
+                        </div>
+                        <div class="profile-section-actions">
+                            <RadzenButton Text="Save Changes" ButtonStyle="ButtonStyle.Primary" Click="SaveInfo" IsBusy="_savingInfo" />
+                        </div>
+                    </div>
+
+                    <!-- Change Password -->
+                    <div class="dashboard-card profile-section">
+                        <div class="profile-section-title">Change Password</div>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Current Password</label>
+                                <input class="form-control form-control-custom" @bind="_pwModel.Current" type="password" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">New Password</label>
+                                <input class="form-control form-control-custom" @bind="_pwModel.New" type="password" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Confirm New Password</label>
+                                <input class="form-control form-control-custom" @bind="_pwModel.Confirm" type="password" />
+                            </div>
+                        </div>
+                        <div class="profile-section-actions">
+                            <RadzenButton Text="Change Password" ButtonStyle="ButtonStyle.Secondary" Click="ChangePassword" IsBusy="_savingPw" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        @{ Navigation.NavigateTo("/login"); }
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private Lyceum.Models.User? _user;
+    private InfoModel _infoModel = new();
+    private PasswordModel _pwModel = new();
+    private bool _savingInfo, _savingPw, _photoUploading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userId = int.Parse(authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
+        _user = await UserManager.FindByIdAsync(userId.ToString());
+        if (_user == null) return;
+
+        _infoModel.FullName = _user.FullName;
+        _infoModel.Email = _user.Email ?? "";
+
+        if (_user.Role == Lyceum.Models.UserRole.Student)
+        {
+            var s = await Db.Students.FindAsync(await Db.Students
+                .Where(x => x.UserId == userId)
+                .Select(x => x.Id)
+                .FirstOrDefaultAsync());
+            if (s != null)
+            {
+                _infoModel.Phone = s.Phone;
+                _infoModel.Gender = s.Gender;
+                _infoModel.Address = s.Address;
+            }
+        }
+        else if (_user.Role == Lyceum.Models.UserRole.Teacher)
+        {
+            var t = await Db.Teachers
+                .Where(x => x.UserId == userId)
+                .FirstOrDefaultAsync();
+            if (t != null)
+            {
+                _infoModel.Phone = t.Phone;
+                _infoModel.Department = t.Department;
+                _infoModel.Bio = t.Bio;
+            }
+        }
+    }
+
+    private async Task SaveInfo()
+    {
+        if (_user == null) return;
+        _savingInfo = true;
+        try
+        {
+            _user.FullName = _infoModel.FullName.Trim();
+            if (_user.Email != _infoModel.Email)
+            {
+                await UserManager.SetEmailAsync(_user, _infoModel.Email);
+                await UserManager.SetUserNameAsync(_user, _infoModel.Email);
+            }
+            _user.UpdatedAt = DateTime.UtcNow;
+            await UserManager.UpdateAsync(_user);
+
+            if (_user.Role == Lyceum.Models.UserRole.Student)
+            {
+                var s = await Db.Students.FirstOrDefaultAsync(x => x.UserId == _user.Id);
+                if (s != null)
+                {
+                    s.Phone = _infoModel.Phone;
+                    s.Gender = _infoModel.Gender;
+                    s.Address = _infoModel.Address;
+                    await Db.SaveChangesAsync();
+                }
+            }
+            else if (_user.Role == Lyceum.Models.UserRole.Teacher)
+            {
+                var t = await Db.Teachers.FirstOrDefaultAsync(x => x.UserId == _user.Id);
+                if (t != null)
+                {
+                    t.Phone = _infoModel.Phone;
+                    t.Department = _infoModel.Department;
+                    t.Bio = _infoModel.Bio;
+                    await Db.SaveChangesAsync();
+                }
+            }
+
+            NotificationService.Notify(NotificationSeverity.Success, "Saved", "Profile updated successfully.");
+        }
+        catch
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", "Could not save changes.");
+        }
+        finally { _savingInfo = false; }
+    }
+
+    private async Task ChangePassword()
+    {
+        if (_user == null) return;
+        if (string.IsNullOrWhiteSpace(_pwModel.Current) || string.IsNullOrWhiteSpace(_pwModel.New))
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Validation", "All password fields are required.");
+            return;
+        }
+        if (_pwModel.New != _pwModel.Confirm)
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Validation", "New passwords do not match.");
+            return;
+        }
+        _savingPw = true;
+        try
+        {
+            var result = await UserManager.ChangePasswordAsync(_user, _pwModel.Current, _pwModel.New);
+            if (result.Succeeded)
+            {
+                _pwModel = new();
+                NotificationService.Notify(NotificationSeverity.Success, "Done", "Password changed successfully.");
+            }
+            else
+            {
+                var msg = string.Join(", ", result.Errors.Select(e => e.Description));
+                NotificationService.Notify(NotificationSeverity.Error, "Failed", msg);
+            }
+        }
+        finally { _savingPw = false; }
+    }
+
+    private async Task OnPhotoSelected(InputFileChangeEventArgs e)
+    {
+        if (_user == null) return;
+        var file = e.File;
+        if (file.Size > 5 * 1024 * 1024)
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Too large", "Image must be under 5 MB.");
+            return;
+        }
+        _photoUploading = true;
+        StateHasChanged();
+        try
+        {
+            var ext = Path.GetExtension(file.Name).ToLowerInvariant();
+            var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+            if (!allowed.Contains(ext)) ext = ".jpg";
+
+            var uploadsDir = Path.Combine(Env.WebRootPath, "uploads", "profiles");
+            Directory.CreateDirectory(uploadsDir);
+            var fileName = $"{_user.Id}{ext}";
+            var filePath = Path.Combine(uploadsDir, fileName);
+
+            await using var fs = new FileStream(filePath, FileMode.Create);
+            await using var stream = file.OpenReadStream(5 * 1024 * 1024);
+            await stream.CopyToAsync(fs);
+
+            var photoUrl = $"/uploads/profiles/{fileName}?v={DateTime.UtcNow.Ticks}";
+            _user.PhotoUrl = photoUrl;
+            _user.UpdatedAt = DateTime.UtcNow;
+            await UserManager.UpdateAsync(_user);
+
+            // Keep Student.PhotoUrl in sync for face recognition
+            if (_user.Role == Lyceum.Models.UserRole.Student)
+            {
+                var s = await Db.Students.FirstOrDefaultAsync(x => x.UserId == _user.Id);
+                if (s != null) { s.PhotoUrl = photoUrl; await Db.SaveChangesAsync(); }
+            }
+
+            NotificationService.Notify(NotificationSeverity.Success, "Uploaded", "Profile photo updated.");
+        }
+        catch
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", "Could not upload photo.");
+        }
+        finally { _photoUploading = false; StateHasChanged(); }
+    }
+
+    private static string GetInitials(string name)
+    {
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "?";
+        if (parts.Length == 1) return parts[0][0].ToString().ToUpper();
+        return $"{parts[0][0]}{parts[^1][0]}".ToUpper();
+    }
+
+    private class InfoModel
+    {
+        public string FullName { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string? Phone { get; set; }
+        public string? Gender { get; set; }
+        public string? Address { get; set; }
+        public string? Department { get; set; }
+        public string? Bio { get; set; }
+    }
+
+    private class PasswordModel
+    {
+        public string Current { get; set; } = "";
+        public string New { get; set; } = "";
+        public string Confirm { get; set; } = "";
+    }
+}

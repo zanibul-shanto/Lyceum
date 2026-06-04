@@ -18,6 +18,8 @@ public class LyceumUserClaimsPrincipalFactory : UserClaimsPrincipalFactory<User>
         // Add role from the custom enum — Identity's default factory reads from AspNetUserRoles
         // which is unused in this project; roles live on User.Role instead.
         identity.AddClaim(new Claim(ClaimTypes.Role, user.Role.ToString()));
+        identity.AddClaim(new Claim("FullName", user.FullName));
+        identity.AddClaim(new Claim("PhotoUrl", user.PhotoUrl ?? ""));
         return identity;
     }
 }

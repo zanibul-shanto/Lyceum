@@ -1,5 +1,6 @@
 @inherits LayoutComponentBase
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
 
 @if (IsAuthPage())
 {
@@ -19,6 +20,18 @@ else
                     <div class="logo-box-sidebar">L</div>
                     <span class="logo-text-sidebar">Lyceum</span>
                 </div>
+                <div class="lc-header-spacer"></div>
+                <a href="/profile" class="lc-user-chip">
+                    @if (!string.IsNullOrEmpty(_photoUrl))
+                    {
+                        <img src="@_photoUrl" class="lc-avatar" alt="avatar" />
+                    }
+                    else
+                    {
+                        <span class="lc-avatar lc-avatar-initials">@_initials</span>
+                    }
+                    <span class="lc-user-name">@_fullName</span>
+                </a>
             </div>
         </RadzenHeader>
 
@@ -42,6 +55,29 @@ else
 
 @code {
     private bool sidebarExpanded = true;
+    private string _fullName = "";
+    private string _photoUrl = "";
+    private string _initials = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            _fullName = user.FindFirst("FullName")?.Value ?? user.Identity.Name ?? "";
+            _photoUrl = user.FindFirst("PhotoUrl")?.Value ?? "";
+            _initials = GetInitials(_fullName);
+        }
+    }
+
+    private static string GetInitials(string name)
+    {
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "?";
+        if (parts.Length == 1) return parts[0][0].ToString().ToUpper();
+        return $"{parts[0][0]}{parts[^1][0]}".ToUpper();
+    }
 
     private bool IsAuthPage()
     {

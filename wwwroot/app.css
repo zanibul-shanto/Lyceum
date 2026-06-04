@@ -1173,3 +1173,185 @@ h1, h2, h3, h4, h5, h6 {
 .badge-small {
     font-size: 0.72rem;
 }
+
+/* ==========================================================================
+   Topbar User Chip
+   ========================================================================== */
+.lc-header-spacer {
+    flex: 1;
+}
+
+.lc-user-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    padding: 0.2rem 0.75rem 0.2rem 0.2rem;
+    border-radius: 9999px;
+    transition: background 0.15s;
+    cursor: pointer;
+}
+
+.lc-user-chip:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.lc-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+}
+
+.lc-avatar-initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary);
+    color: #fff;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 0.8rem;
+    user-select: none;
+}
+
+.lc-user-name {
+    color: rgba(255, 255, 255, 0.85);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   Profile Page
+   ========================================================================== */
+.profile-layout {
+    display: flex;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    align-items: flex-start;
+}
+
+.profile-avatar-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 200px;
+    width: 200px;
+    flex-shrink: 0;
+}
+
+.profile-avatar-wrap {
+    position: relative;
+    margin-bottom: 0.5rem;
+}
+
+.profile-avatar-img {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-avatar-initials-lg {
+    background: var(--primary);
+    color: #fff;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 2rem;
+}
+
+.profile-avatar-upload-btn {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.85rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    transition: background 0.15s;
+}
+
+.profile-avatar-upload-btn:hover {
+    background: var(--primary-hover);
+}
+
+.profile-avatar-name {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--slate-800);
+    text-align: center;
+}
+
+.profile-avatar-role {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--slate-500);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.profile-upload-status {
+    font-size: 0.8rem;
+    color: var(--primary);
+}
+
+.profile-forms {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 0;
+}
+
+.profile-section {
+    padding: 1.5rem !important;
+}
+
+.profile-section-title {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--slate-800);
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--slate-200);
+}
+
+.profile-section-actions {
+    margin-top: 1.25rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+    .profile-layout {
+        flex-direction: column;
+    }
+    .profile-avatar-card {
+        width: 100%;
+    }
+}
