@@ -13,7 +13,7 @@ Lyceum is an ASP.NET Core Blazor-based educational management system for student
 - **Language**: C# 12+ (with nullable reference types enabled)
 - **Database**: SQL Server with Entity Framework Core 10.0.8
 - **Authentication**: ASP.NET Core Identity + Custom Claims-based Auth State
-- **UI**: Razor components with Bootstrap 5 and custom CSS design system
+- **UI**: Razor components with Bootstrap 5, BlazorBootstrap component library, and custom CSS design system
 - **Build/Run**: `dotnet` CLI
 
 ## Build & Run Commands
@@ -76,10 +76,16 @@ On first run, the `DbInitializer` seeds 5 test accounts:
 
 The `UserRole` enum (Student=0, Teacher=1, Admin=2) drives role-based visibility and access throughout the UI.
 
+### Course Model
+`Course` fields: `Name`, `CourseCode` (unique, indexed), `Description`, `Schedule`, `RoomNo`, `Credits` (1–10), `MaxCapacity` (1–500), `IsActive`, `CreatedAt`, `UpdatedAt`.
+
+`CourseTeacher` is the many-to-many junction between `Course` and `User` (Teacher). Composite PK `(CourseId, TeacherId)`. When calling `CourseService.CreateAsync` / `UpdateAsync`, pass a `List<int>` of teacher User IDs — the service replaces junction rows on update.
+
 ### Database & EF Core
 - `LyceumDbContext` extends `IdentityDbContext<User, IdentityRole<int>, int>`
   - Inherits all Identity tables (AspNetUsers, AspNetRoles, AspNetUserRoles, etc.)
   - Custom properties on User are stored in AspNetUsers table
+  - Extra DbSets: `Courses`, `CourseTeachers`; `CourseCode` has a unique index
 - Migrations are in `Migrations/` directory; first migration (`20260522132608_init.cs`) creates all Identity tables + custom User columns
 - `DbInitializer.InitializeAsync()` (called in `Program.cs`) ensures migrations run and seeds data if empty
 
@@ -87,7 +93,7 @@ The `UserRole` enum (Student=0, Teacher=1, Admin=2) drives role-based visibility
 **Pages** (`Components/Pages/`):
 - **Public**: `Login.razor`, `Register.razor` (no auth required)
 - **Dashboard**: `Home.razor` (redirects to role-specific dashboard)
-- **Role-specific**: `Admin/AdminDashboard.razor`, `Teacher/TeacherDashboard.razor`, `Student/StudentDashboard.razor`
+- **Role-specific**: `Admin/AdminDashboard.razor`, `Admin/CourseManagement.razor`, `Teacher/TeacherDashboard.razor`, `Student/StudentDashboard.razor`
 - **Error**: `Error.razor`, `NotFound.razor`
 
 **Layout** (`Components/Layout/`):
@@ -124,6 +130,12 @@ Custom component classes:
 - `GetAuthenticationStateAsync()`: Restores auth state from protected storage
 - `MarkUserAsAuthenticated(user)`: Login callback
 - `MarkUserAsLoggedOut()`: Logout callback
+
+**`CourseService`** (Scoped)
+- `GetAllAsync()`, `GetByIdAsync(id)`: Course queries (includes `CourseTeachers → Teacher`)
+- `CreateAsync(course, teacherIds)`: Enforces unique `CourseCode`; creates junction rows
+- `UpdateAsync(course, teacherIds)`: Replaces all junction rows atomically
+- `DeleteAsync(id)`, `ToggleActiveAsync(id)`: Course management
 
 **`LyceumDbContext`** (Scoped)
 - Standard EF Core DbContext for database access
@@ -181,8 +193,11 @@ Routes defined in `Routes.razor`:
 | Launch profiles | `Properties/launchSettings.json` |
 | Database migrations | `Migrations/` |
 | Admin dashboard | `Components/Pages/Admin/AdminDashboard.razor` |
+| Course management (Admin) | `Components/Pages/Admin/CourseManagement.razor` |
 | Teacher dashboard | `Components/Pages/Teacher/TeacherDashboard.razor` |
 | Student dashboard | `Components/Pages/Student/StudentDashboard.razor` |
+| Course model | `Models/Course.cs` (includes `CourseTeacher` junction) |
+| Course CRUD | `Services/CourseService.cs` |
 | Sidebar nav | `Components/Layout/NavMenu.razor` |
 | Main layout | `Components/Layout/MainLayout.razor` |
 
@@ -196,14 +211,47 @@ Routes defined in `Routes.razor`:
 
 ## Behavioral Guidelines (Andrej Karpathy Skills)
 
-**1. Think Before Coding**
-State assumptions explicitly. If uncertain, ask. Surface confusion and tradeoffs rather than making silent decisions about ambiguous requirements.
+Derived from [Andrej Karpathy's observations](https://x.com/karpathy/status/2015883857489522876) on LLM coding pitfalls.
 
-**2. Simplicity First**
-Minimum code that solves the problem — nothing speculative. Avoid unrequested features, premature abstraction, or unnecessary error handling. If 200 lines could be 50, rewrite it.
+### 1. Think Before Coding
 
-**3. Surgical Changes**
-Touch only what you must. Clean up only your own mess. When editing, preserve existing style and avoid refactoring unrelated code. Remove only imports/functions that your changes made obsolete. If you notice unrelated dead code, mention it — don't delete it.
+Don't assume. Don't hide confusion. Surface tradeoffs.
 
-**4. Goal-Driven Execution**
-Define success criteria. Loop until verified. Transform vague tasks into testable checkpoints — write tests first, then implement to pass them.
+- State assumptions explicitly — if uncertain, ask rather than guess
+- Present multiple interpretations — don't pick silently when ambiguity exists
+- Push back when a simpler approach exists
+- Stop when confused — name what's unclear and ask for clarification
+
+### 2. Simplicity First
+
+Minimum code that solves the problem. Nothing speculative.
+
+- No features beyond what was asked
+- No abstractions for single-use code
+- No error handling for impossible scenarios
+- If 200 lines could be 50, rewrite it
+
+**Test:** Would a senior engineer say this is overcomplicated? If yes, simplify.
+
+### 3. Surgical Changes
+
+Touch only what you must. Clean up only your own mess.
+
+- Don't "improve" adjacent code, comments, or formatting
+- Match existing style, even if you'd do it differently
+- If you notice unrelated dead code, mention it — don't delete it
+- Remove imports/variables/functions that *your* changes made unused; leave pre-existing dead code alone
+
+**Test:** Every changed line should trace directly to the user's request.
+
+### 4. Goal-Driven Execution
+
+Define success criteria. Loop until verified.
+
+Transform tasks into verifiable goals — write a test that reproduces a bug, then make it pass; ensure tests pass before and after a refactor. For multi-step tasks, state a brief plan with a verification check per step.
+
+**Key insight:** LLMs loop well against specific goals. Weak criteria ("make it work") require constant clarification; strong criteria let the LLM loop independently.
+
+### Tradeoff Note
+
+These guidelines bias toward caution over speed. For trivial tasks (simple typo fixes, obvious one-liners), use judgment — not every change needs full rigor. The goal is reducing costly mistakes on non-trivial work.
