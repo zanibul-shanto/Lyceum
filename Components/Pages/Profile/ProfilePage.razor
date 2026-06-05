@@ -8,6 +8,7 @@
 @inject NotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IWebHostEnvironment Env
+@inject IJSRuntime JSRuntime
 
 <PageTitle>My Profile - Lyceum</PageTitle>
 
@@ -268,25 +269,41 @@
             var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
             if (!allowed.Contains(ext)) ext = ".jpg";
 
-            var uploadsDir = Path.Combine(Env.WebRootPath, "uploads", "profiles");
+            var uploadsDir = Path.Combine(Env.WebRootPath, "uploads", "photos");
             Directory.CreateDirectory(uploadsDir);
-            var fileName = $"{_user.Id}{ext}";
+            var fileName = $"{Guid.NewGuid()}{ext}";
             var filePath = Path.Combine(uploadsDir, fileName);
 
-            await using var fs = new FileStream(filePath, FileMode.Create);
-            await using var stream = file.OpenReadStream(5 * 1024 * 1024);
-            await stream.CopyToAsync(fs);
+            await using (var fs = new FileStream(filePath, FileMode.Create))
+            await using (var stream = file.OpenReadStream(5 * 1024 * 1024))
+                await stream.CopyToAsync(fs);
 
-            var photoUrl = $"/uploads/profiles/{fileName}?v={DateTime.UtcNow.Ticks}";
+            var photoUrl = $"/uploads/photos/{fileName}";
             _user.PhotoUrl = photoUrl;
             _user.UpdatedAt = DateTime.UtcNow;
             await UserManager.UpdateAsync(_user);
 
-            // Keep Student.PhotoUrl in sync for face recognition
             if (_user.Role == Lyceum.Models.UserRole.Student)
             {
                 var s = await Db.Students.FirstOrDefaultAsync(x => x.UserId == _user.Id);
-                if (s != null) { s.PhotoUrl = photoUrl; await Db.SaveChangesAsync(); }
+                if (s != null)
+                {
+                    s.PhotoUrl = photoUrl;
+                    // Re-extract face descriptor so AI attendance stays current
+                    var dataUrl = await ReadFileAsDataUrl(file);
+                    var descriptor = await JSRuntime.InvokeAsync<float[]?>("extractFaceDescriptor", dataUrl);
+                    s.FaceDescriptor = descriptor != null
+                        ? System.Text.Json.JsonSerializer.Serialize(descriptor)
+                        : null;
+                    await Db.SaveChangesAsync();
+
+                    if (descriptor == null)
+                        NotificationService.Notify(NotificationSeverity.Warning, "No face detected",
+                            "Photo saved but no face was detected. Use a clear front-facing photo for AI attendance to work.");
+                    else
+                        NotificationService.Notify(NotificationSeverity.Success, "Uploaded", "Profile photo updated and face registered for AI attendance.");
+                    return;
+                }
             }
 
             NotificationService.Notify(NotificationSeverity.Success, "Uploaded", "Profile photo updated.");
@@ -296,6 +313,16 @@
             NotificationService.Notify(NotificationSeverity.Error, "Error", "Could not upload photo.");
         }
         finally { _photoUploading = false; StateHasChanged(); }
+    }
+
+    private async Task<string> ReadFileAsDataUrl(IBrowserFile file)
+    {
+        await using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+        var bytes = new byte[file.Size];
+        await stream.ReadExactlyAsync(bytes);
+        var base64 = Convert.ToBase64String(bytes);
+        var mime = file.ContentType ?? "image/jpeg";
+        return $"data:{mime};base64,{base64}";
     }
 
     private static string GetInitials(string name)

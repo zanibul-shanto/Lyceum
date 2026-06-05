@@ -54,10 +54,12 @@ Each role has its own dashboard and a set of allowed actions. After login you ar
 ### Students — `/admin/students`
 - Full list of all student accounts with enrollment date, phone, and active status
 - **Add Student** — opens a form (full name, email, date of birth, gender, phone, address). Username is auto-generated from the email prefix; a temporary password is required.
-- **Edit** — update any student's personal details
+- **Edit** — update any student's personal details. The form includes a **photo upload** (camera icon on the avatar): uploading a clear, front-facing photo automatically extracts a face descriptor and registers the student for AI attendance. A green "Face registered for AI attendance" label confirms success; a yellow warning means no face was detected and the photo should be re-uploaded.
 - **Active toggle** — flip the switch to activate or deactivate an account without deleting it
 - **Delete** — permanently removes the student and their user account
 - **Import Students (CSV)** — bulk-import students from a `.csv` file (max 5 MB). See the CSV format section below.
+
+> **Photo tips for AI attendance:** Use a well-lit, front-facing photo where the face is clearly visible. Glasses, hats, or extreme angles reduce detection accuracy. Photos are stored in `wwwroot/uploads/photos/`.
 
 ### Teachers — `/admin/teachers`
 - Full faculty list with department, joining date, and active status
@@ -105,7 +107,7 @@ Each role has its own dashboard and a set of allowed actions. After login you ar
 ### My Courses — `/teacher/courses`
 - List of all courses you are assigned to with code, credits, room, and enrollment count
 
-### Attendance — `/teacher/attendance`
+### Manual Attendance — `/teacher/attendance`
 
 1. Select a course from the dropdown.
 2. Pick a session date, start time, and end time.
@@ -119,6 +121,32 @@ Each role has its own dashboard and a set of allowed actions. After login you ar
 - Click **Save Attendance** again to overwrite the records.
 - Click **Cancel Edit** to discard changes.
 - Click the **delete** icon to permanently remove a session and all its records.
+
+### AI Attendance — `/teacher/auto-attendance`
+
+Webcam-based face recognition attendance. The system recognises enrolled students automatically by matching their face against the photo registered by the admin.
+
+**Before using AI Attendance:**
+The admin must upload a clear, front-facing photo for each student via **Admin → Students → Edit**. Students with a registered face show a green badge count at the top of the webcam card. Students without a registered face show a ⚠ warning icon in the roster.
+
+**Taking attendance:**
+
+1. Select a course from the dropdown.
+2. Optionally set a session date, start time, and end time.
+3. The student roster loads on the right. Students without face data are flagged.
+4. Click **Start Camera** — the browser will ask for webcam permission.
+   - A pulsing blue dot and "Scanning every 1.2s" indicator shows the AI is actively scanning.
+   - A live counter shows how many students have been recognised so far.
+5. Have each student face the camera. When a face is matched:
+   - A **green bounding box** appears on the video feed with the student's name.
+   - The student's row in the roster flashes green and their status changes to **Present**.
+   - Unknown faces show a grey bounding box with "?".
+6. You can manually override any status using the **P / A / L** buttons at any time.
+7. Click **Stop Camera** when done, then **Save Attendance**.
+
+**Duplicate protection:** If a session already exists for the selected course and date, saving is blocked with an error message. Choose a different date or delete the existing session first.
+
+> AI attendance sessions are tagged as **AI** type in the database, distinct from manually created sessions.
 
 ### Grades — `/teacher/grades`
 
@@ -149,6 +177,18 @@ Each role has its own dashboard and a set of allowed actions. After login you ar
 1. Select a course.
 2. Click **Generate Class Attendance Report** — downloads a PDF with a per-student breakdown of Present / Absent / Late counts and attendance percentage.
 3. Click **Generate Class Result Report** — downloads a PDF with all students' assignment, midterm, final, total marks, and letter grades.
+
+---
+
+## Profile Page — `/profile`
+
+Available to all roles (Admin, Teacher, Student).
+
+- **Basic Information** — update your full name, email, and role-specific fields (phone, gender, address for students; phone, department, bio for teachers)
+- **Change Password** — enter your current password plus the new password (confirmed twice)
+- **Profile Photo** — click the camera icon on the avatar to upload a new photo (JPG, PNG, WEBP, GIF — max 5 MB)
+  - For **students**: uploading a new photo automatically re-extracts the face descriptor and updates AI attendance registration. A success notification confirms "face registered"; a warning means no face was detected in the photo.
+  - For teachers and admins: the photo is saved and displayed in the profile only.
 
 ---
 

@@ -71,9 +71,11 @@
                                 }
                             </div>
 
-                            <div class="rounded overflow-hidden mb-3 bg-dark" style="aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;">
+                            <div class="rounded overflow-hidden mb-3 bg-dark" style="aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;position:relative;">
                                 <video id="attendanceVideo" autoplay playsinline muted
                                        style="width:100%;height:100%;object-fit:cover;@(isCameraRunning ? "" : "display:none;")" />
+                                <canvas id="attendanceCanvas"
+                                        style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;@(isCameraRunning ? "" : "display:none;")" />
                                 @if (!isCameraRunning)
                                 {
                                     <div class="text-center text-secondary p-4">
@@ -83,6 +85,14 @@
                                 }
                             </div>
 
+                            @if (isCameraRunning)
+                            {
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="scanning-dot"></span>
+                                    <small class="text-secondary">Scanning every 1.2s</small>
+                                    <span class="ms-auto badge bg-success">@recognizedCount recognized</span>
+                                </div>
+                            }
                             @if (statusMessage != null)
                             {
                                 <div class="alert alert-info py-2 small mb-3">@statusMessage</div>
@@ -135,7 +145,7 @@
                                 {
                                     var status = studentStatuses.TryGetValue(student.Id, out var s) ? s : AttendanceStatus.Absent;
                                     var hasDescriptor = student.FaceDescriptor != null;
-                                    <div class="d-flex align-items-center gap-3 p-2 rounded mb-1"
+                                    <div class="d-flex align-items-center gap-3 p-2 rounded mb-1 @(recentlyRecognized.Contains(student.Id) ? "face-recognized" : "")"
                                          style="background:@(status == AttendanceStatus.Present ? "rgba(34,197,94,.08)" : "rgba(239,68,68,.05)")">
                                         @if (!string.IsNullOrEmpty(student.PhotoUrl))
                                         {
@@ -201,6 +211,8 @@
     private List<Student> roster = [];
     private List<Student> studentsWithDescriptor = [];
     private Dictionary<int, AttendanceStatus> studentStatuses = [];
+    private HashSet<int> recentlyRecognized = [];
+    private int recognizedCount;
 
     private int? selectedCourseId;
     private DateTime sessionDate = DateTime.Today;
@@ -260,6 +272,8 @@
 
         studentStatuses = roster.ToDictionary(s => s.Id, _ => AttendanceStatus.Absent);
         studentsWithDescriptor = roster.Where(s => !string.IsNullOrEmpty(s.FaceDescriptor)).ToList();
+        recentlyRecognized.Clear();
+        recognizedCount = 0;
     }
 
     private async Task StartCamera()
@@ -280,9 +294,11 @@
             }).ToList();
 
             var descriptorsJson = System.Text.Json.JsonSerializer.Serialize(descriptors);
-            await JSRuntime.InvokeVoidAsync("startAutoAttendance", "attendanceVideo", descriptorsJson, dotNetRef);
+            var namesJson = System.Text.Json.JsonSerializer.Serialize(
+                studentsWithDescriptor.ToDictionary(s => s.Id.ToString(), s => s.User?.FullName ?? "Student"));
+            await JSRuntime.InvokeVoidAsync("startAutoAttendance", "attendanceVideo", "attendanceCanvas", descriptorsJson, namesJson, dotNetRef);
             isCameraRunning = true;
-            statusMessage = "Camera running — show student faces to the camera.";
+            statusMessage = null;
         }
         catch (Exception ex)
         {
@@ -304,12 +320,19 @@
     [JSInvokable]
     public void OnFaceDetected(int studentId)
     {
-        if (studentStatuses.ContainsKey(studentId) && studentStatuses[studentId] != AttendanceStatus.Present)
+        if (studentStatuses.ContainsKey(studentId))
         {
-            studentStatuses[studentId] = AttendanceStatus.Present;
-            var student = roster.FirstOrDefault(s => s.Id == studentId);
-            if (student != null)
-                statusMessage = $"Recognized: {student.User?.FullName}";
+            if (studentStatuses[studentId] != AttendanceStatus.Present)
+            {
+                studentStatuses[studentId] = AttendanceStatus.Present;
+                recognizedCount++;
+            }
+            recentlyRecognized.Add(studentId);
+            _ = Task.Delay(1500).ContinueWith(_ =>
+            {
+                recentlyRecognized.Remove(studentId);
+                InvokeAsync(StateHasChanged);
+            });
             InvokeAsync(StateHasChanged);
         }
     }
@@ -325,13 +348,19 @@
 
         try
         {
+            if (await AttendanceService.SessionExistsAsync(selectedCourseId.Value, sessionDate))
+            {
+                pageError = $"A session already exists for this course on {sessionDate:MMM d, yyyy}. Choose a different date or delete the existing session first.";
+                return;
+            }
+
             await StopCamera();
 
             TimeOnly? start = startTime.HasValue ? TimeOnly.FromDateTime(startTime.Value) : null;
             TimeOnly? end = endTime.HasValue ? TimeOnly.FromDateTime(endTime.Value) : null;
 
             var session = await AttendanceService.CreateSessionAsync(
-                selectedCourseId.Value, currentTeacher.Id, sessionDate, start, end);
+                selectedCourseId.Value, currentTeacher.Id, sessionDate, start, end, SessionType.AI);
 
             var records = studentStatuses.Select(kvp => (StudentId: kvp.Key, Status: kvp.Value)).ToList();
             await AttendanceService.MarkAttendanceAsync(session.Id, records);
@@ -341,6 +370,9 @@
                 $"Attendance saved — {presentCount}/{records.Count} present.");
 
             studentStatuses = roster.ToDictionary(s => s.Id, _ => AttendanceStatus.Absent);
+            recentlyRecognized.Clear();
+            recognizedCount = 0;
+            pageError = null;
             sessionDate = DateTime.Today;
             startTime = null;
             endTime = null;

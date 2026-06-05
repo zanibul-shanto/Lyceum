@@ -13,6 +13,7 @@ A web-based academic management platform for students, teachers, and administrat
 | Database       | SQL Server + Entity Framework Core 10   |
 | Authentication | ASP.NET Core Identity + Cookie Auth     |
 | UI             | Radzen Blazor + Bootstrap 5             |
+| Face Recognition | face-api.js 0.22 (TinyFaceDetector + FaceRecognitionNet) |
 | PDF Reports    | QuestPDF                                |
 | CSV Import     | CsvHelper                               |
 
@@ -67,6 +68,7 @@ Login accepts either username or email address.
 
 ### Admin
 - User management (students, teachers, admins) — add, edit, deactivate, delete
+- **Student photo upload** — upload a face photo per student to register them for AI attendance; face descriptor extracted automatically in the browser via face-api.js
 - Bulk student import via CSV
 - Course management — create courses, assign teachers, set semester/year
 - Student enrollment management — enroll or drop students per course
@@ -77,6 +79,7 @@ Login accepts either username or email address.
 ### Teacher
 - View assigned courses and enrolled student rosters
 - Manual attendance — create sessions, mark Present / Absent / Late, edit past sessions
+- **AI attendance** — webcam-based face recognition; automatically marks enrolled students Present as they face the camera, with live bounding-box overlays showing matched names; manual override available per student; duplicate session protection
 - Grade entry — assignment (30%), midterm (30%), final (40%) with live grade calculation
 - PDF reports — class attendance summary and class result sheet per course
 

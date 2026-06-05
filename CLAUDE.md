@@ -22,6 +22,7 @@ Database auto-migrates and seeds on first startup via `DbInitializer.InitializeA
 - ASP.NET Core Identity (`IdentityUser<int>`, cookie auth, 7-day expiry)
 - **Radzen Blazor** for all UI components (`RadzenDataGrid`, `RadzenDropDown`, `RadzenButton`, `DialogService`, `NotificationService`, etc.)
 - Bootstrap 5 + Bootstrap Icons for layout and icons
+- **face-api.js 0.22** (CDN) for in-browser face detection and recognition (AI attendance)
 - QuestPDF for PDF generation, CsvHelper for bulk import
 
 ## Architecture
@@ -85,6 +86,24 @@ Teacher dialogs: `GradeDialog`.
 await JSRuntime.InvokeVoidAsync("downloadFileFromBytes", filename, base64);
 ```
 
+### Photo Upload & Face Recognition
+
+All student photos (uploaded via `StudentDialog` or the profile page) are saved to `wwwroot/uploads/photos/` using a GUID filename. There is only one photo folder — do not create or reference `uploads/profiles/`.
+
+After saving the file, call `extractFaceDescriptor(dataUrl)` (defined in `App.razor`) to extract a 128-float face descriptor in the browser. Store the result as a JSON string in `Student.FaceDescriptor`. If null is returned, show a warning — no face was detected.
+
+`Student` has two face-related fields:
+- `PhotoUrl` — path to the image file (e.g. `/uploads/photos/{guid}.jpg`)
+- `FaceDescriptor` — JSON-serialised `float[128]`, or null if no face detected
+
+**AI Attendance JS functions** (all defined in `App.razor`):
+- `loadFaceApiModels()` — lazy-loads TinyFaceDetector + FaceLandmarks + FaceRecognition models from CDN
+- `extractFaceDescriptor(dataUrl)` — returns `float[]` or null; used during photo upload
+- `startAutoAttendance(videoId, canvasId, descriptorsJson, namesJson, dotNetRef)` — starts webcam loop, draws face bounding boxes on canvas, invokes `OnFaceDetected(studentId)` on the Blazor component
+- `stopAutoAttendance()` — stops the interval and the media stream
+
+`SessionType` enum has two values: `Manual = 0` (created via `/teacher/attendance`) and `AI = 1` (created via `/teacher/auto-attendance`). Always pass `SessionType.AI` when saving from `AutoAttendance.razor`. `AttendanceService.SessionExistsAsync(courseId, date)` checks for duplicate sessions.
+
 ### CSS
 
 Global design tokens and component classes are in `wwwroot/app.css`. Reuse existing classes:
@@ -104,9 +123,12 @@ Global design tokens and component classes are in `wwwroot/app.css`. Reuse exist
 | Auth state provider | `Services/LyceumAuthStateProvider.cs` |
 | EF DbContext + model config | `Services/LyceumDbContext.cs` |
 | Seed data | `Services/DbInitializer.cs` |
-| HTML shell + JS helpers | `Components/App.razor` |
+| HTML shell + JS helpers (incl. face-api.js) | `Components/App.razor` |
 | Global Razor imports | `Components/_Imports.razor` |
 | Sidebar navigation | `Components/Layout/NavMenu.razor` |
+| AI attendance page | `Components/Pages/Teacher/AutoAttendance.razor` |
+| Student photo + face descriptor upload | `Components/Pages/Admin/StudentDialog.razor` |
+| Profile photo upload (all roles) | `Components/Pages/Profile/ProfilePage.razor` |
 
 ## Behavioral Guidelines
 

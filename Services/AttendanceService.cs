@@ -5,14 +5,20 @@ namespace Lyceum.Services;
 
 public class AttendanceService(LyceumDbContext context)
 {
-    public async Task<AttendanceSession> CreateSessionAsync(int courseId, int teacherId, DateTime sessionDate, TimeOnly? startTime, TimeOnly? endTime)
+    public async Task<bool> SessionExistsAsync(int courseId, DateTime sessionDate)
+    {
+        return await context.AttendanceSessions
+            .AnyAsync(s => s.CourseId == courseId && s.SessionDate.Date == sessionDate.Date);
+    }
+
+    public async Task<AttendanceSession> CreateSessionAsync(int courseId, int teacherId, DateTime sessionDate, TimeOnly? startTime, TimeOnly? endTime, SessionType sessionType = SessionType.Manual)
     {
         var session = new AttendanceSession
         {
             CourseId = courseId,
             TeacherId = teacherId,
             SessionDate = sessionDate,
-            SessionType = SessionType.Manual,
+            SessionType = sessionType,
             StartTime = startTime,
             EndTime = endTime
         };

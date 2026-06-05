@@ -4,7 +4,8 @@ namespace Lyceum.Models;
 
 public enum SessionType
 {
-    Manual = 0
+    Manual = 0,
+    AI = 1
 }
 
 public class AttendanceSession

@@ -53,35 +53,62 @@
 
         window.extractFaceDescriptor = async (dataUrl) => {
             await window.loadFaceApiModels();
-            const img = await faceapi.fetchImage(dataUrl);
+            const img = new Image();
+            img.src = dataUrl;
+            await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; });
+            const opts = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.3 });
             const detection = await faceapi
-                .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+                .detectSingleFace(img, opts)
                 .withFaceLandmarks(true)
                 .withFaceDescriptor();
             return detection ? Array.from(detection.descriptor) : null;
         };
 
-        window.startAutoAttendance = async (videoId, descriptorsJson, dotNetRef) => {
+        window.startAutoAttendance = async (videoId, canvasId, descriptorsJson, namesJson, dotNetRef) => {
             await window.loadFaceApiModels();
             const entries = JSON.parse(descriptorsJson);
+            const names = JSON.parse(namesJson);
             if (entries.length === 0) return;
             const labeled = entries.map(d =>
                 new faceapi.LabeledFaceDescriptors(String(d.studentId), [new Float32Array(d.descriptor)])
             );
             const matcher = new faceapi.FaceMatcher(labeled, 0.55);
             const video = document.getElementById(videoId);
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas ? canvas.getContext('2d') : null;
             activeStream = await navigator.mediaDevices.getUserMedia({ video: true });
             video.srcObject = activeStream;
             await new Promise(r => { video.onloadedmetadata = r; });
             video.play();
+            const opts = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.3 });
             attendanceLoop = setInterval(async () => {
                 const detections = await faceapi
-                    .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+                    .detectAllFaces(video, opts)
                     .withFaceLandmarks(true)
                     .withFaceDescriptors();
+                if (ctx) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
                 for (const d of detections) {
                     const match = matcher.findBestMatch(d.descriptor);
-                    if (match.label !== 'unknown') {
+                    const isKnown = match.label !== 'unknown';
+                    if (ctx) {
+                        const box = d.detection.box;
+                        const color = isKnown ? '#22c55e' : '#64748b';
+                        ctx.strokeStyle = color;
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(box.x, box.y, box.width, box.height);
+                        const label = isKnown ? (names[match.label] || 'Student') : '?';
+                        const labelW = Math.max(box.width, ctx.measureText(label).width + 12);
+                        ctx.fillStyle = color;
+                        ctx.fillRect(box.x, box.y - 22, labelW, 22);
+                        ctx.fillStyle = '#fff';
+                        ctx.font = 'bold 12px sans-serif';
+                        ctx.fillText(label, box.x + 6, box.y - 7);
+                    }
+                    if (isKnown) {
                         await dotNetRef.invokeMethodAsync('OnFaceDetected', parseInt(match.label));
                     }
                 }
