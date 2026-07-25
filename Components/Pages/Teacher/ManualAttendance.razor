@@ -25,9 +25,13 @@
                     <div class="col-12 col-md-4">
                         <label class="form-label text-secondary fw-semibold small">Select Course</label>
                         <RadzenDropDown TValue="int?" Value="@selectedCourseId" Data="@assignedCourses" 
-                                        TextProperty="Name" ValueProperty="Id" 
+                                        ValueProperty="Id" 
                                         Change="@(args => OnCourseChanged((int?)args))" 
-                                        Placeholder="Choose a course..." class="w-100" />
+                                        Placeholder="Choose a course..." class="w-100">
+                            <Template Context="course">
+                                @course.CourseCode - @course.Name
+                            </Template>
+                        </RadzenDropDown>
                     </div>
 
                     @if (selectedCourseId.HasValue)
