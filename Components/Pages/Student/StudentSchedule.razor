@@ -136,8 +136,7 @@
         {
             var timetableEntries = await TimetableService.GetByStudentAsync(currentStudent.Id);
             
-            // Map days Monday through Friday, or include weekend if entries exist
-            var daysToInclude = Enum.GetValues<DayOfWeekEnum>().ToList();
+            var daysToInclude = new[] { DayOfWeekEnum.Sunday, DayOfWeekEnum.Monday, DayOfWeekEnum.Tuesday, DayOfWeekEnum.Wednesday, DayOfWeekEnum.Thursday, DayOfWeekEnum.Friday, DayOfWeekEnum.Saturday };
             
             weeklySchedule = daysToInclude
                 .Select(day => new DaySchedule

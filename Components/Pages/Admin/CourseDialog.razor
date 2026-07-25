@@ -1,5 +1,4 @@
 @inject CourseService CourseService
-@inject TeacherService TeacherService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 
@@ -32,17 +31,6 @@
                                rows="2" placeholder="Brief course description..." />
             </div>
 
-            <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold small text-secondary">Schedule</label>
-                <InputText @bind-Value="Course.Schedule" class="form-control form-control-custom"
-                           placeholder="e.g. Mon/Wed 9:00–10:30 AM" />
-            </div>
-            <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold small text-secondary">Room No.</label>
-                <InputText @bind-Value="Course.RoomNo" class="form-control form-control-custom"
-                           placeholder="e.g. Science Hall, Rm 302" />
-            </div>
-
             <div class="col-6 col-md-3">
                 <label class="form-label fw-semibold small text-secondary">Credits</label>
                 <InputNumber @bind-Value="Course.Credits" class="form-control form-control-custom"
@@ -55,41 +43,11 @@
                              min="1" max="500" />
                 <ValidationMessage For="() => Course.MaxCapacity" />
             </div>
-            <div class="col-6 col-md-3">
-                <label class="form-label fw-semibold small text-secondary">Semester</label>
-                <InputText @bind-Value="Course.Semester" class="form-control form-control-custom"
-                           placeholder="e.g. Fall" />
-            </div>
-            <div class="col-6 col-md-3">
-                <label class="form-label fw-semibold small text-secondary">Academic Year</label>
-                <InputText @bind-Value="Course.AcademicYear" class="form-control form-control-custom"
-                           placeholder="e.g. 2026-2027" />
-            </div>
             <div class="col-12 col-md-6 d-flex align-items-end pb-1">
                 <div class="form-check form-switch">
                     <InputCheckbox @bind-Value="Course.IsActive" class="form-check-input" id="isActiveCb" />
                     <label class="form-check-label fw-semibold small text-secondary" for="isActiveCb">Course is Active</label>
                 </div>
-            </div>
-
-            <div class="col-12">
-                <label class="form-label fw-semibold small text-secondary">Assign Teachers</label>
-                @if (!dropdownTeachers.Any())
-                {
-                    <p class="text-secondary small mb-0">No teachers found. Add teacher accounts first.</p>
-                }
-                else
-                {
-                    <RadzenDropDown @bind-Value="localTeacherIds"
-                                   Data="@dropdownTeachers"
-                                   TextProperty="FullName"
-                                   ValueProperty="Id"
-                                   Multiple="true"
-                                   AllowFiltering="true"
-                                   FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                                   Placeholder="Select teachers..."
-                                   class="w-100" />
-                }
             </div>
         </div>
 
@@ -102,41 +60,18 @@
 
 @code {
     [Parameter] public Course Course { get; set; } = new();
-    [Parameter] public IEnumerable<int> SelectedTeacherIds { get; set; } = Enumerable.Empty<int>();
 
-    private List<TeacherDropdownItem> dropdownTeachers = [];
-    private IEnumerable<int> localTeacherIds = Enumerable.Empty<int>();
     private string? modalError;
-
-    public class TeacherDropdownItem
-    {
-        public int Id { get; set; }
-        public string FullName { get; set; } = string.Empty;
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        var teachers = await TeacherService.GetAllAsync();
-        dropdownTeachers = teachers.Select(t => new TeacherDropdownItem
-        {
-            Id = t.Id,
-            FullName = $"{t.User.FullName} ({t.TeacherCode})"
-        }).ToList();
-        
-        localTeacherIds = SelectedTeacherIds.ToList();
-    }
 
     private async Task SaveCourse()
     {
         modalError = null;
         try
         {
-            var teacherIdsList = localTeacherIds.ToList();
-
             if (Course.Id == 0)
-                await CourseService.CreateAsync(Course, teacherIdsList);
+                await CourseService.CreateAsync(Course);
             else
-                await CourseService.UpdateAsync(Course, teacherIdsList);
+                await CourseService.UpdateAsync(Course);
 
             DialogService.Close(true);
             NotificationService.Notify(NotificationSeverity.Success, "Saved", "Course saved successfully.");

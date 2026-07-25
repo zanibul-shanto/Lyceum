@@ -223,7 +223,7 @@
                     Code = e.Course.CourseCode,
                     Title = e.Course.Name,
                     Progress = courseAttendance.TryGetValue(e.CourseId, out var rate) ? rate : 100.0,
-                    NextTask = $"Room: {e.Course.RoomNo} | Schedule: {e.Course.Schedule}"
+                    NextTask = $"{e.Course.Credits} Credits"
                 })
                 .ToList();
 

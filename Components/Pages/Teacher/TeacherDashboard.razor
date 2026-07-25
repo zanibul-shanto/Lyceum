@@ -114,7 +114,6 @@
                                 <RadzenDataGridColumn TItem="Course" Property="CourseCode" Title="Code" Width="100px" />
                                 <RadzenDataGridColumn TItem="Course" Property="Name" Title="Name" />
                                 <RadzenDataGridColumn TItem="Course" Property="Credits" Title="Credits" Width="80px" TextAlign="TextAlign.Center" />
-                                <RadzenDataGridColumn TItem="Course" Property="RoomNo" Title="Room" Width="100px" />
                                 <RadzenDataGridColumn TItem="Course" Title="Enrolled" Width="100px" TextAlign="TextAlign.Center">
                                     <Template Context="course">
                                         <span class="badge bg-secondary text-white">@course.Enrollments.Count / @course.MaxCapacity</span>
@@ -214,17 +213,19 @@
     {
         if (currentTeacher == null) return;
 
-        // Fetch assigned courses
-        assignedCourses = new List<Course>();
+        // Fetch assigned courses from timetable entries
+        var timetableEntries = await TimetableService.GetByTeacherAsync(currentTeacher.Id);
+        assignedCourses = timetableEntries.Select(t => t.Course).Distinct().ToList();
+        upcomingSessions = timetableEntries;
+
         var uniqueStudentsList = new HashSet<int>();
         var teacherGrades = new List<Grade>();
 
-        foreach (var ct in currentTeacher.CourseTeachers)
+        foreach (var course in assignedCourses)
         {
-            var courseDetails = await CourseService.GetByIdAsync(ct.CourseId);
+            var courseDetails = await CourseService.GetByIdAsync(course.Id);
             if (courseDetails != null)
             {
-                assignedCourses.Add(courseDetails);
                 foreach (var enrollment in courseDetails.Enrollments)
                 {
                     if (enrollment.Status == EnrollmentStatus.Active)
@@ -233,15 +234,12 @@
                     }
                 }
 
-                var courseGrades = await GradeService.GetByCourseAsync(ct.CourseId);
+                var courseGrades = await GradeService.GetByCourseAsync(course.Id);
                 teacherGrades.AddRange(courseGrades);
             }
         }
 
         totalEnrolledStudents = uniqueStudentsList.Count;
-
-        // Fetch upcoming class sessions (Timetable)
-        upcomingSessions = await TimetableService.GetByTeacherAsync(currentTeacher.Id);
 
         // Class average GPA (weighted average of grades)
         double totalCredits = 0;

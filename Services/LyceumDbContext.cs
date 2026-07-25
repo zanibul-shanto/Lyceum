@@ -14,7 +14,6 @@ public class LyceumDbContext : IdentityDbContext<User, IdentityRole<int>, int>
     public DbSet<Student> Students { get; set; }
     public DbSet<Teacher> Teachers { get; set; }
     public DbSet<Course> Courses { get; set; }
-    public DbSet<CourseTeacher> CourseTeachers { get; set; }
     public DbSet<Subject> Subjects { get; set; }
     public DbSet<StudentEnrollment> StudentEnrollments { get; set; }
     public DbSet<AttendanceSession> AttendanceSessions { get; set; }
@@ -53,20 +52,6 @@ public class LyceumDbContext : IdentityDbContext<User, IdentityRole<int>, int>
 
         modelBuilder.Entity<Teacher>()
             .HasIndex(t => t.TeacherCode).IsUnique();
-
-        // CourseTeacher (M:N composite key)
-        modelBuilder.Entity<CourseTeacher>()
-            .HasKey(ct => new { ct.CourseId, ct.TeacherId });
-
-        modelBuilder.Entity<CourseTeacher>()
-            .HasOne(ct => ct.Course)
-            .WithMany(c => c.CourseTeachers)
-            .HasForeignKey(ct => ct.CourseId);
-
-        modelBuilder.Entity<CourseTeacher>()
-            .HasOne(ct => ct.Teacher)
-            .WithMany(t => t.CourseTeachers)
-            .HasForeignKey(ct => ct.TeacherId);
 
         // Course unique index
         modelBuilder.Entity<Course>()

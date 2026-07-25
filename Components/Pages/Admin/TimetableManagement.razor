@@ -1,6 +1,5 @@
 @page "/admin/timetable"
 @inject TimetableService TimetableService
-@inject CourseService CourseService
 @inject TeacherService TeacherService
 @inject SystemSettingService SystemSettingService
 @inject DialogService DialogService
@@ -125,11 +124,13 @@
     private string selectedAcademicYear = "2026-2027";
 
     private readonly DayOfWeekEnum[] DaysToDisplay = [
+        DayOfWeekEnum.Sunday,
         DayOfWeekEnum.Monday,
         DayOfWeekEnum.Tuesday,
         DayOfWeekEnum.Wednesday,
         DayOfWeekEnum.Thursday,
-        DayOfWeekEnum.Friday
+        DayOfWeekEnum.Friday,
+        DayOfWeekEnum.Saturday
     ];
 
     protected override async Task OnInitializedAsync()
@@ -137,9 +138,9 @@
         selectedSemester = await SystemSettingService.GetAsync("CurrentSemester") ?? "Fall";
         selectedAcademicYear = await SystemSettingService.GetAsync("AcademicYear") ?? "2026-2027";
 
-        var courses = await CourseService.GetAllAsync();
-        semesters = courses
-            .Select(c => c.Semester)
+        var timetableEntries = await TimetableService.GetAllAsync();
+        semesters = timetableEntries
+            .Select(t => t.Semester)
             .Where(s => !string.IsNullOrWhiteSpace(s))
             .Select(s => s!)
             .Distinct()
@@ -148,8 +149,8 @@
         if (!semesters.Contains("Spring")) semesters.Add("Spring");
         if (!semesters.Contains("Summer")) semesters.Add("Summer");
 
-        academicYears = courses
-            .Select(c => c.AcademicYear)
+        academicYears = timetableEntries
+            .Select(t => t.AcademicYear)
             .Where(y => !string.IsNullOrWhiteSpace(y))
             .Select(y => y!)
             .Distinct()

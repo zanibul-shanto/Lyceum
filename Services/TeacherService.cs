@@ -10,8 +10,6 @@ public class TeacherService(LyceumDbContext context, UserManager<User> userManag
     {
         var query = context.Teachers
             .Include(t => t.User)
-            .Include(t => t.CourseTeachers)
-                .ThenInclude(ct => ct.Course)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -33,8 +31,6 @@ public class TeacherService(LyceumDbContext context, UserManager<User> userManag
     {
         return await context.Teachers
             .Include(t => t.User)
-            .Include(t => t.CourseTeachers)
-                .ThenInclude(ct => ct.Course)
             .FirstOrDefaultAsync(t => t.Id == id);
     }
 
@@ -42,8 +38,6 @@ public class TeacherService(LyceumDbContext context, UserManager<User> userManag
     {
         return await context.Teachers
             .Include(t => t.User)
-            .Include(t => t.CourseTeachers)
-                .ThenInclude(ct => ct.Course)
             .FirstOrDefaultAsync(t => t.UserId == userId);
     }
 

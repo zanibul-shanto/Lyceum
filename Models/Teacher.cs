@@ -33,7 +33,6 @@ public class Teacher
     public string? OfficeRoom { get; set; }
 
     // Navigation
-    public ICollection<CourseTeacher> CourseTeachers { get; set; } = [];
     public ICollection<AttendanceSession> AttendanceSessions { get; set; } = [];
     public ICollection<Grade> GradesEntered { get; set; } = [];
     public ICollection<Timetable> Timetables { get; set; } = [];

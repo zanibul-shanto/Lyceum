@@ -143,7 +143,8 @@
             DisplayName = $"{(t.User != null ? t.User.FullName : "Unknown")} ({t.TeacherCode})"
         }).ToList();
 
-        days = Enum.GetValues<DayOfWeekEnum>().Select(d => new DropDownItem<DayOfWeekEnum>
+        var orderedDays = new[] { DayOfWeekEnum.Sunday, DayOfWeekEnum.Monday, DayOfWeekEnum.Tuesday, DayOfWeekEnum.Wednesday, DayOfWeekEnum.Thursday, DayOfWeekEnum.Friday, DayOfWeekEnum.Saturday };
+        days = orderedDays.Select(d => new DropDownItem<DayOfWeekEnum>
         {
             Value = d,
             DisplayName = d.ToString()

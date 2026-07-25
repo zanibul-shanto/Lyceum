@@ -1,5 +1,6 @@
 @page "/teacher/reports"
 @inject TeacherService TeacherService
+@inject TimetableService TimetableService
 @inject ReportService ReportService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
@@ -114,7 +115,8 @@
                 currentTeacher = await TeacherService.GetByUserIdAsync(userId);
                 if (currentTeacher != null)
                 {
-                    assignedCourses = currentTeacher.CourseTeachers.Select(ct => ct.Course).ToList();
+                    var timetableEntries = await TimetableService.GetByTeacherAsync(currentTeacher.Id);
+                    assignedCourses = timetableEntries.Select(t => t.Course).Distinct().ToList();
                 }
             }
         }

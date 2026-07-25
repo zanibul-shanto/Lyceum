@@ -1,5 +1,6 @@
 @page "/teacher/grades"
 @inject TeacherService TeacherService
+@inject TimetableService TimetableService
 @inject EnrollmentService EnrollmentService
 @inject GradeService GradeService
 @inject AuthenticationStateProvider AuthStateProvider
@@ -164,7 +165,8 @@
                 currentTeacher = await TeacherService.GetByUserIdAsync(userId);
                 if (currentTeacher != null)
                 {
-                    assignedCourses = currentTeacher.CourseTeachers.Select(ct => ct.Course).ToList();
+                    var timetableEntries = await TimetableService.GetByTeacherAsync(currentTeacher.Id);
+                    assignedCourses = timetableEntries.Select(t => t.Course).Distinct().ToList();
                 }
             }
         }

@@ -1,6 +1,7 @@
 @page "/student/courses"
 @inject StudentService StudentService
 @inject CourseService CourseService
+@inject TimetableService TimetableService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 
@@ -58,29 +59,18 @@
 
                                     <div class="mb-3">
                                         <span class="text-secondary small d-block mb-1">
-                                            <i class="bi bi-clock me-1"></i> Schedule
-                                        </span>
-                                        <span class="text-dark small fw-semibold">
-                                            @(string.IsNullOrWhiteSpace(item.Course.Schedule) ? "Not Scheduled" : item.Course.Schedule)
-                                        </span>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <span class="text-secondary small d-block mb-1">
-                                            <i class="bi bi-geo-alt me-1"></i> Room
-                                        </span>
-                                        <span class="text-dark small fw-semibold">
-                                            Room @(item.Course.RoomNo ?? "TBA")
-                                        </span>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <span class="text-secondary small d-block mb-1">
                                             <i class="bi bi-person-badge me-1"></i> Instructor
                                         </span>
                                         <span class="text-dark small fw-semibold">
-                                            @(item.Course.CourseTeachers.Any()
-                                                ? string.Join(", ", item.Course.CourseTeachers.Select(ct => ct.Teacher.User.FullName))
+                                            @{
+                                                var instructors = item.Course.Timetables
+                                                    .Where(t => t.Teacher?.User != null)
+                                                    .Select(t => t.Teacher.User.FullName)
+                                                    .Distinct()
+                                                    .ToList();
+                                            }
+                                            @(instructors.Count != 0
+                                                ? string.Join(", ", instructors)
                                                 : "No Instructor Assigned")
                                         </span>
                                     </div>

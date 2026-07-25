@@ -1,5 +1,6 @@
 @page "/teacher/auto-attendance"
 @inject TeacherService TeacherService
+@inject TimetableService TimetableService
 @inject EnrollmentService EnrollmentService
 @inject AttendanceService AttendanceService
 @inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthStateProvider
@@ -37,7 +38,7 @@
                                                 Change="@(args => OnCourseChanged((int?)args))"
                                                 Placeholder="Choose a course..." class="w-100">
                                     <Template Context="course">
-                                        @course.CourseCode - @course.Name @(!string.IsNullOrEmpty(course.RoomNo) ? $"({course.RoomNo})" : "")
+                                        @course.CourseCode - @course.Name
                                     </Template>
                                 </RadzenDropDown>
                             </div>
@@ -46,18 +47,7 @@
                                 <div class="col-12 col-md-5">
                                     <label class="form-label text-secondary fw-semibold small">Session Date</label>
                                     <RadzenDatePicker TValue="DateTime" @bind-Value="sessionDate" DateFormat="yyyy-MM-dd" class="w-100" />
-                                </div>
-                                @if (selectedCourse != null)
-                                {
-                                    <div class="col-12 col-md-4">
-                                        <label class="form-label text-secondary fw-semibold small">Room</label>
-                                        <div class="form-control-plaintext text-white fw-semibold ps-0">@(!string.IsNullOrEmpty(selectedCourse.RoomNo) ? selectedCourse.RoomNo : "Not assigned")</div>
-                                    </div>
-                                    <div class="col-12 col-md-3">
-                                        <label class="form-label text-secondary fw-semibold small">Schedule</label>
-                                        <div class="form-control-plaintext text-white fw-semibold ps-0">@(!string.IsNullOrEmpty(selectedCourse.Schedule) ? selectedCourse.Schedule : "Not set")</div>
-                                    </div>
-                                }
+                                </div>}
                             }
                         </div>
                     </div>
@@ -242,7 +232,10 @@
             {
                 currentTeacher = await TeacherService.GetByUserIdAsync(userId);
                 if (currentTeacher != null)
-                    assignedCourses = currentTeacher.CourseTeachers.Select(ct => ct.Course).ToList();
+                {
+                    var timetableEntries = await TimetableService.GetByTeacherAsync(currentTeacher.Id);
+                    assignedCourses = timetableEntries.Select(t => t.Course).Distinct().ToList();
+                }
             }
         }
     }

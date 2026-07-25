@@ -1,5 +1,6 @@
 @page "/teacher/courses"
 @inject TeacherService TeacherService
+@inject TimetableService TimetableService
 @inject EnrollmentService EnrollmentService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
@@ -70,10 +71,7 @@
                         <Columns>
                             <RadzenDataGridColumn TItem="Course" Property="CourseCode" Title="Code" Width="120px" />
                             <RadzenDataGridColumn TItem="Course" Property="Name" Title="Course Name" />
-                            <RadzenDataGridColumn TItem="Course" Property="RoomNo" Title="Room" Width="100px" />
                             <RadzenDataGridColumn TItem="Course" Property="Credits" Title="Credits" Width="80px" />
-                            <RadzenDataGridColumn TItem="Course" Property="Semester" Title="Semester" Width="110px" />
-                            <RadzenDataGridColumn TItem="Course" Property="AcademicYear" Title="Academic Year" Width="130px" />
                         </Columns>
                     </RadzenDataGrid>
                 </div>
@@ -107,7 +105,8 @@
                 currentTeacher = await TeacherService.GetByUserIdAsync(userId);
                 if (currentTeacher != null)
                 {
-                    assignedCourses = currentTeacher.CourseTeachers.Select(ct => ct.Course).ToList();
+                    var timetableEntries = await TimetableService.GetByTeacherAsync(currentTeacher.Id);
+                    assignedCourses = timetableEntries.Select(t => t.Course).Distinct().ToList();
 
                     foreach (var course in assignedCourses)
                     {

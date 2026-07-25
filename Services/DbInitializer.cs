@@ -152,8 +152,6 @@ public static class DbInitializer
                 Description = "Fundamentals of programming, algorithms, and data structures.",
                 Credits = 4,
                 MaxCapacity = 40,
-                Semester = "Fall",
-                AcademicYear = "2026-2027",
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow.AddMonths(-3)
             };
@@ -165,8 +163,6 @@ public static class DbInitializer
                 Description = "Multivariable calculus, vector fields, and surface integrals.",
                 Credits = 3,
                 MaxCapacity = 35,
-                Semester = "Fall",
-                AcademicYear = "2026-2027",
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow.AddMonths(-3)
             };
@@ -178,8 +174,6 @@ public static class DbInitializer
                 Description = "Relational databases, SQL, normalization, and transaction management.",
                 Credits = 3,
                 MaxCapacity = 30,
-                Semester = "Fall",
-                AcademicYear = "2026-2027",
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow.AddMonths(-2)
             };
@@ -194,13 +188,6 @@ public static class DbInitializer
                 new Subject { CourseId = course2.Id, SubjectName = "Vector Calculus", SubjectCode = "MATH301-A" },
                 new Subject { CourseId = course3.Id, SubjectName = "SQL & Relational Design", SubjectCode = "CS301-A" },
                 new Subject { CourseId = course3.Id, SubjectName = "Transaction Processing", SubjectCode = "CS301-B" }
-            );
-
-            // --- Course-Teacher Assignments ---
-            context.CourseTeachers.AddRange(
-                new CourseTeacher { CourseId = course1.Id, TeacherId = teacher1.Id },
-                new CourseTeacher { CourseId = course2.Id, TeacherId = teacher2.Id },
-                new CourseTeacher { CourseId = course3.Id, TeacherId = teacher1.Id }
             );
 
             // --- Student Enrollments ---

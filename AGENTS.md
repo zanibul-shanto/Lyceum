@@ -40,11 +40,11 @@ Login: POST `/api/auth/login` (form body: `username`, `password`). Accepts usern
 
 ```
 User ──1:1──► Student ──M:N──► Course (via StudentEnrollment)
-User ──1:1──► Teacher ──M:N──► Course (via CourseTeacher, composite PK)
+User ──1:1──► Teacher ──1:M──► Timetable ──M:1──► Course
 Course ──1:M──► Subject, AttendanceSession, Grade, Timetable
 ```
 
-`CourseTeacher` uses composite PK `(CourseId, TeacherId)` — no surrogate key. Pass `List<int>` of **Teacher.Id** (not UserId) to course create/update.
+Teacher–course assignment is managed through `Timetable` entries (each entry assigns one teacher to a course time slot). There is no separate `CourseTeacher` junction.
 
 `User : IdentityUser<int>` — `Username` is a `[NotMapped]` property aliasing `IdentityUser.UserName`, not a separate column. `Student` and `Teacher` are separate models with 1:1 FK to `User`; do not add their fields to `User`.
 
@@ -52,7 +52,7 @@ Course ──1:M──► Subject, AttendanceSession, Grade, Timetable
 
 All in `Services/`, namespace `Lyceum.Services`. Key services:
 - `StudentService` / `TeacherService` — CRUD; call `UserManager` for user creation/deletion
-- `CourseService` — CRUD + teacher assignment via `CourseTeacher` junction; `UpdateAsync` replaces all junction rows atomically
+- `CourseService` — CRUD; course is purely definitional (name, code, credits, capacity). Scheduling and teacher assignment handled via `TimetableService`.
 - `EnrollmentService` — enroll/drop students per course
 - `AttendanceService` — sessions + records; `MarkAttendanceAsync` deletes then re-inserts all records
 - `GradeService` — upsert; `ComputeGrade` applies 30/30/40 (assignment/midterm/final)

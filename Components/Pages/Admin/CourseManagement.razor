@@ -43,8 +43,8 @@
                 </div>
                 <div class="col-12 col-sm-6 col-xl-3">
                     <div class="dashboard-card">
-                        <div class="kpi-label">Teachers Assigned</div>
-                        <div class="kpi-number">@allCourses.SelectMany(c => c.CourseTeachers).Select(ct => ct.TeacherId).Distinct().Count()</div>
+                        <div class="kpi-label">Subjects Total</div>
+                        <div class="kpi-number">@allCourses.Sum(c => c.Subjects.Count)</div>
                     </div>
                 </div>
             </div>
@@ -93,19 +93,6 @@
                             </Template>
                         </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="Course" Title="Schedule / Room" Sortable="false">
-                            <Template Context="course">
-                                <div class="small">
-                                    @if (!string.IsNullOrWhiteSpace(course.Schedule))
-                                    { <div>@course.Schedule</div> }
-                                    @if (!string.IsNullOrWhiteSpace(course.RoomNo))
-                                    { <div class="text-secondary">@course.RoomNo</div> }
-                                    @if (string.IsNullOrWhiteSpace(course.Schedule) && string.IsNullOrWhiteSpace(course.RoomNo))
-                                    { <span class="text-secondary">—</span> }
-                                </div>
-                            </Template>
-                        </RadzenDataGridColumn>
-
                         <RadzenDataGridColumn TItem="Course" Property="Credits" Title="Credits" Width="90px" TextAlign="TextAlign.Center">
                             <Template Context="course">
                                 <span class="badge bg-success-subtle text-success fw-normal">@course.Credits cr</span>
@@ -115,30 +102,6 @@
                         <RadzenDataGridColumn TItem="Course" Property="MaxCapacity" Title="Cap." Width="80px" TextAlign="TextAlign.Center">
                             <Template Context="course">
                                 <span class="text-secondary small">@course.MaxCapacity</span>
-                            </Template>
-                        </RadzenDataGridColumn>
-
-                        <RadzenDataGridColumn TItem="Course" Title="Teachers" Sortable="false">
-                            <Template Context="course">
-                                @if (!course.CourseTeachers.Any())
-                                {
-                                    <span class="text-secondary small">—</span>
-                                }
-                                else
-                                {
-                                    <div class="d-flex flex-wrap gap-1">
-                                        @foreach (var ct in course.CourseTeachers.Take(2))
-                                        {
-                                            <span class="badge-role badge-teacher">@ct.Teacher.User?.FullName</span>
-                                        }
-                                        @if (course.CourseTeachers.Count > 2)
-                                        {
-                                            <span class="badge bg-secondary-subtle text-secondary badge-small">
-                                                +@(course.CourseTeachers.Count - 2)
-                                            </span>
-                                        }
-                                    </div>
-                                }
                             </Template>
                         </RadzenDataGridColumn>
 
@@ -242,8 +205,7 @@
         var result = await DialogService.OpenAsync<CourseDialog>("Add New Course",
             new Dictionary<string, object?>
             {
-                { "Course", course },
-                { "SelectedTeacherIds", Enumerable.Empty<int>() }
+                { "Course", course }
             },
             new DialogOptions { Width = "680px", Resizable = false, CloseDialogOnOverlayClick = true });
 
@@ -261,20 +223,16 @@
             Name = course.Name,
             CourseCode = course.CourseCode,
             Description = course.Description,
-            Schedule = course.Schedule,
-            RoomNo = course.RoomNo,
             Credits = course.Credits,
             MaxCapacity = course.MaxCapacity,
             IsActive = course.IsActive,
             CreatedAt = course.CreatedAt
         };
-        var teacherIds = course.CourseTeachers.Select(ct => ct.TeacherId).ToList();
 
         var result = await DialogService.OpenAsync<CourseDialog>("Edit Course",
             new Dictionary<string, object?>
             {
-                { "Course", courseClone },
-                { "SelectedTeacherIds", teacherIds }
+                { "Course", courseClone }
             },
             new DialogOptions { Width = "680px", Resizable = false, CloseDialogOnOverlayClick = true });
 
