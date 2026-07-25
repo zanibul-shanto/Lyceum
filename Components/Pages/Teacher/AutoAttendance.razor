@@ -33,24 +33,31 @@
                             <div class="col-12">
                                 <label class="form-label text-secondary fw-semibold small">Select Course</label>
                                 <RadzenDropDown TValue="int?" Value="@selectedCourseId" Data="@assignedCourses"
-                                                TextProperty="Name" ValueProperty="Id"
+                                                ValueProperty="Id"
                                                 Change="@(args => OnCourseChanged((int?)args))"
-                                                Placeholder="Choose a course..." class="w-100" />
+                                                Placeholder="Choose a course..." class="w-100">
+                                    <Template Context="course">
+                                        @course.CourseCode - @course.Name @(!string.IsNullOrEmpty(course.RoomNo) ? $"({course.RoomNo})" : "")
+                                    </Template>
+                                </RadzenDropDown>
                             </div>
                             @if (selectedCourseId.HasValue)
                             {
-                                <div class="col-12 col-md-6">
+                                <div class="col-12 col-md-5">
                                     <label class="form-label text-secondary fw-semibold small">Session Date</label>
                                     <RadzenDatePicker TValue="DateTime" @bind-Value="sessionDate" DateFormat="yyyy-MM-dd" class="w-100" />
                                 </div>
-                                <div class="col-6 col-md-3">
-                                    <label class="form-label text-secondary fw-semibold small">Start</label>
-                                    <RadzenDatePicker TValue="DateTime?" @bind-Value="startTime" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" class="w-100" />
-                                </div>
-                                <div class="col-6 col-md-3">
-                                    <label class="form-label text-secondary fw-semibold small">End</label>
-                                    <RadzenDatePicker TValue="DateTime?" @bind-Value="endTime" ShowTime="true" TimeOnly="true" DateFormat="HH:mm" class="w-100" />
-                                </div>
+                                @if (selectedCourse != null)
+                                {
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label text-secondary fw-semibold small">Room</label>
+                                        <div class="form-control-plaintext text-white fw-semibold ps-0">@(!string.IsNullOrEmpty(selectedCourse.RoomNo) ? selectedCourse.RoomNo : "Not assigned")</div>
+                                    </div>
+                                    <div class="col-12 col-md-3">
+                                        <label class="form-label text-secondary fw-semibold small">Schedule</label>
+                                        <div class="form-control-plaintext text-white fw-semibold ps-0">@(!string.IsNullOrEmpty(selectedCourse.Schedule) ? selectedCourse.Schedule : "Not set")</div>
+                                    </div>
+                                }
                             }
                         </div>
                     </div>
@@ -214,10 +221,9 @@
     private HashSet<int> recentlyRecognized = [];
     private int recognizedCount;
 
+    private Course? selectedCourse;
     private int? selectedCourseId;
     private DateTime sessionDate = DateTime.Today;
-    private DateTime? startTime;
-    private DateTime? endTime;
 
     private bool isCameraRunning;
     private string? pageError;
@@ -258,6 +264,7 @@
     {
         await StopCamera();
         selectedCourseId = courseId;
+        selectedCourse = courseId.HasValue ? assignedCourses.FirstOrDefault(c => c.Id == courseId.Value) : null;
         roster.Clear();
         studentStatuses.Clear();
         studentsWithDescriptor.Clear();
@@ -356,11 +363,8 @@
 
             await StopCamera();
 
-            TimeOnly? start = startTime.HasValue ? TimeOnly.FromDateTime(startTime.Value) : null;
-            TimeOnly? end = endTime.HasValue ? TimeOnly.FromDateTime(endTime.Value) : null;
-
             var session = await AttendanceService.CreateSessionAsync(
-                selectedCourseId.Value, currentTeacher.Id, sessionDate, start, end, SessionType.AI);
+                selectedCourseId.Value, currentTeacher.Id, sessionDate, null, null, SessionType.AI);
 
             var records = studentStatuses.Select(kvp => (StudentId: kvp.Key, Status: kvp.Value)).ToList();
             await AttendanceService.MarkAttendanceAsync(session.Id, records);
@@ -374,8 +378,6 @@
             recognizedCount = 0;
             pageError = null;
             sessionDate = DateTime.Today;
-            startTime = null;
-            endTime = null;
         }
         catch (Exception ex)
         {
