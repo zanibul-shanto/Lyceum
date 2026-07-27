@@ -36,13 +36,7 @@
                 <div class="dashboard-card p-4">
                     <RadzenDataGrid Data="@assignedCourses" TItem="Course" AllowSorting="true" AllowPaging="true" PageSize="10" GridLines="DataGridGridLines.Horizontal">
                         <Template Context="course">
-                            <div class="p-3 bg-light rounded border border-primary-subtle">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="stat-icon bg-primary-subtle text-primary me-2 mb-0 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 0.9rem;">
-                                        <i class="bi bi-people-fill"></i>
-                                    </div>
-                                    <h6 class="fw-bold mb-0 text-dark">Enrolled Students in @course.Name</h6>
-                                </div>
+                                <div class="p-3 rounded-0 border-0">
                                 @if (courseEnrollments.TryGetValue(course.Id, out var enrollments) && enrollments.Any())
                                 {
                                     <RadzenDataGrid Data="@enrollments" TItem="StudentEnrollment" AllowPaging="true" PageSize="5">
