@@ -39,20 +39,8 @@
             </div>
 
             <div class="row g-4 mb-4">
-                <!-- Bio Card -->
-                <div class="col-12 col-lg-4">
-                    <div class="dashboard-card h-100 p-4">
-                        <h5 class="fw-bold text-dark mb-3">
-                            <i class="bi bi-file-person text-primary me-2"></i> Professional Bio
-                        </h5>
-                        <p class="text-secondary mb-0 small bio-text">
-                            @(currentTeacher?.Bio ?? "No professional bio provided yet. Update your profile in the administration panel.")
-                        </p>
-                    </div>
-                </div>
-
                 <!-- GPA Distribution Chart Card -->
-                <div class="col-12 col-lg-4">
+                <div class="col-12 col-lg-6">
                     <div class="dashboard-card h-100 p-4">
                         <h5 class="fw-bold text-dark mb-3">
                             <i class="bi bi-bar-chart-line text-success me-2"></i> Enrolled Students GPA
@@ -72,7 +60,7 @@
                 </div>
 
                 <!-- Quick Stats -->
-                <div class="col-12 col-lg-4">
+                <div class="col-12 col-lg-6">
                     <div class="row g-3 h-100">
                         <div class="col-6">
                             <div class="dashboard-card p-3 h-100 d-flex flex-column justify-content-center">
@@ -101,33 +89,10 @@
                 </div>
             </div>
 
-            <!-- Assigned Courses & Timetable Section -->
-            <div class="row g-4 mb-4">
-                <!-- Assigned Courses Grid -->
-                <div class="col-12 col-xl-7">
+            <!-- Upcoming Class Sessions (Timetable) -->
+                <div class="col-12">
                     <div class="dashboard-card p-4 h-100">
-                        <h4 class="fw-bold mb-3 page-title-modern text-dark" style="font-size:1.15rem;">
-                            <i class="bi bi-journal-bookmark-fill text-primary me-2"></i>Assigned Courses
-                        </h4>
-                        <RadzenDataGrid Data="@assignedCourses" TItem="Course" AllowSorting="true" AllowPaging="true" PageSize="5" GridLines="DataGridGridLines.Horizontal">
-                            <Columns>
-                                <RadzenDataGridColumn TItem="Course" Property="CourseCode" Title="Code" Width="100px" />
-                                <RadzenDataGridColumn TItem="Course" Property="Name" Title="Name" />
-                                <RadzenDataGridColumn TItem="Course" Property="Credits" Title="Credits" Width="80px" TextAlign="TextAlign.Center" />
-                                <RadzenDataGridColumn TItem="Course" Title="Enrolled" Width="100px" TextAlign="TextAlign.Center">
-                                    <Template Context="course">
-                                        <span class="badge bg-secondary text-white">@course.Enrollments.Count / @course.MaxCapacity</span>
-                                    </Template>
-                                </RadzenDataGridColumn>
-                            </Columns>
-                        </RadzenDataGrid>
-                    </div>
-                </div>
-
-                <!-- Upcoming Class Sessions (Timetable) -->
-                <div class="col-12 col-xl-5">
-                    <div class="dashboard-card p-4 h-100">
-                        <h4 class="fw-bold mb-3 page-title-modern text-dark" style="font-size:1.15rem;">
+                        <h4 class="fw-bold mb-3 page-title-modern text-dark" style="font-size:1.25rem;">
                             <i class="bi bi-calendar3 text-warning me-2"></i>Upcoming Class Sessions
                         </h4>
                         <RadzenDataGrid Data="@upcomingSessions" TItem="Timetable" AllowSorting="true" AllowPaging="true" PageSize="5" GridLines="DataGridGridLines.Horizontal">
@@ -148,7 +113,6 @@
                         </RadzenDataGrid>
                     </div>
                 </div>
-            </div>
         </div>
     </Authorized>
     <NotAuthorized>
