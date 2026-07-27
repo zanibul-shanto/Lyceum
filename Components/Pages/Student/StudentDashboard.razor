@@ -18,18 +18,7 @@
                     <h1 class="page-title-modern">Dashboard</h1>
                     <div class="page-subtitle-modern">Academic Year: @academicYear</div>
                 </div>
-                <div class="header-right-block">
-                    <!-- Outlined Header Profile Card matching design -->
-                    <div class="header-profile-card">
-                        <div class="header-avatar-circle">
-                            @GetInitials(currentStudent?.User?.FullName ?? "Alex Chen")
-                        </div>
-                        <div>
-                            <div class="header-user-name">@(currentStudent?.User?.FullName ?? "Alex Chen")</div>
-                            <div class="header-user-role">Student</div>
-                        </div>
-                    </div>
-                </div>
+
             </div>
 
             <!-- Top KPI Widgets Row (4 Cards) -->
@@ -249,14 +238,6 @@
                 }
             }
         }
-    }
-
-    private string GetInitials(string fullName)
-    {
-        if (string.IsNullOrWhiteSpace(fullName)) return "AC";
-        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 1) return parts[0][0].ToString().ToUpper();
-        return (parts[0][0].ToString() + parts[^1][0].ToString()).ToUpper();
     }
 
     private string GetGradeClass(string grade)
