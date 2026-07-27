@@ -76,14 +76,14 @@
             <!-- Semester -->
             <div class="col-6 col-md-4">
                 <label class="form-label fw-semibold small text-secondary">Semester</label>
-                <RadzenTextBox @bind-Value="Timetable.Semester" Placeholder="e.g. Fall" class="w-100" />
+                <RadzenTextBox @bind-Value="Timetable.Semester" Placeholder="e.g. Fall" Disabled="@(Timetable.Id == 0)" class="w-100" />
                 <ValidationMessage For="() => Timetable.Semester" />
             </div>
 
             <!-- Academic Year -->
             <div class="col-6 col-md-4">
                 <label class="form-label fw-semibold small text-secondary">Academic Year</label>
-                <RadzenTextBox @bind-Value="Timetable.AcademicYear" Placeholder="e.g. 2026-2027" class="w-100" />
+                <RadzenTextBox @bind-Value="Timetable.AcademicYear" Placeholder="e.g. 2026-2027" Disabled="@(Timetable.Id == 0)" class="w-100" />
                 <ValidationMessage For="() => Timetable.AcademicYear" />
             </div>
         </div>
