@@ -4,24 +4,6 @@ A web-based academic management platform for students, teachers, and administrat
 
 ---
 
-## Quick Start
-
-### Prerequisites
-- [.NET 10.0 SDK](https://dotnet.microsoft.com/download)
-- SQL Server (LocalDB or SQL Express)
-- Visual Studio 2022+ **or** any terminal
-
-### Run the App
-
-```bash
-dotnet run
-```
-
-The app opens at **`https://localhost:7081`** (or `http://localhost:5058`).  
-The database is created and seeded automatically on first launch.
-
----
-
 ## Test Accounts
 
 | Role    | Username  | Password      |
