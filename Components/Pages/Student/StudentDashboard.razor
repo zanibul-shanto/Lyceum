@@ -60,7 +60,7 @@
                 <div class="col-12 col-sm-6 col-lg-3">
                     <div class="kpi-card">
                         <div class="kpi-label">Attendance Rate</div>
-                        <div class="kpi-number">@attendancePercentage.ToString("0.1")%</div>
+                        <div class="kpi-number">@attendancePercentage.ToString("0.0")%</div>
                         <div class="kpi-footer text-secondary">
                             Overall presence
                         </div>
@@ -129,7 +129,7 @@
             <div class="grades-card-modern p-4">
                 <div class="grades-card-header mb-3">
                     <h5 class="grades-card-title m-0">Recent Grades</h5>
-                    <a href="student/grades" class="grades-card-link text-decoration-none">View all <i class="bi bi-arrow-right"></i></a>
+                    <a href="/student/grades" class="grades-card-link text-decoration-none">View all <i class="bi bi-arrow-right"></i></a>
                 </div>
                 @if (recentGrades.Count > 0)
                 {

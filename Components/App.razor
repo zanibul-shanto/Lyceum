@@ -119,15 +119,6 @@
             if (attendanceLoop) { clearInterval(attendanceLoop); attendanceLoop = null; }
             if (activeStream) { activeStream.getTracks().forEach(t => t.stop()); activeStream = null; }
         };
-
-        window.readFileAsDataUrl = (inputFile) => {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(inputFile);
-            });
-        };
     </script>
 </body>
 

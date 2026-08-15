@@ -111,14 +111,16 @@
                             </Template>
                         </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="Course" Title="" Width="155px" Sortable="false" TextAlign="TextAlign.End">
+                        <RadzenDataGridColumn TItem="Course" Title="" Width="195px" Sortable="false" TextAlign="TextAlign.End">
                             <Template Context="course">
+                                <RadzenButton Icon="menu_book" Click="@(() => ShowSubjectsModal(course))"
+                                              ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" class="me-1" title="Add Syllabus Topic / Subject" />
                                 <RadzenButton Icon="people" Click="@(() => ShowEnrollmentModal(course))"
                                               ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Small" class="me-1" title="Manage Enrollments" />
                                 <RadzenButton Icon="edit" Click="@(() => ShowEditModal(course))"
-                                              ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" class="me-1" />
+                                              ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" class="me-1" title="Edit Course" />
                                 <RadzenButton Icon="delete" Click="@(() => ConfirmDelete(course))"
-                                              ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" />
+                                              ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" title="Delete Course" />
                             </Template>
                         </RadzenDataGridColumn>
                     </Columns>
@@ -188,6 +190,23 @@
             result = result.Where(c => !c.IsActive);
 
         filteredCourses = result.ToList();
+    }
+
+    private async Task ShowSubjectsModal(Course course)
+    {
+        var subject = new Subject { CourseId = course.Id };
+        var result = await DialogService.OpenAsync<SubjectDialog>($"Add Subject — {course.Name}",
+            new Dictionary<string, object?>
+            {
+                { "CourseId", course.Id },
+                { "Subject", subject }
+            },
+            new DialogOptions { Width = "600px", Resizable = false, CloseDialogOnOverlayClick = true });
+
+        if (result == true)
+        {
+            await LoadDataAsync();
+        }
     }
 
     private async Task ShowEnrollmentModal(Course course)

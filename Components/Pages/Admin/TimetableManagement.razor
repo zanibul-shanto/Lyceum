@@ -138,8 +138,8 @@
         selectedSemester = await SystemSettingService.GetAsync("CurrentSemester") ?? "Fall";
         selectedAcademicYear = await SystemSettingService.GetAsync("AcademicYear") ?? "2026-2027";
 
-        var timetableEntries = await TimetableService.GetAllAsync();
-        semesters = timetableEntries
+        var allEntries = await TimetableService.GetAllAsync();
+        semesters = allEntries
             .Select(t => t.Semester)
             .Where(s => !string.IsNullOrWhiteSpace(s))
             .Select(s => s!)
@@ -149,7 +149,7 @@
         if (!semesters.Contains("Spring")) semesters.Add("Spring");
         if (!semesters.Contains("Summer")) semesters.Add("Summer");
 
-        academicYears = timetableEntries
+        academicYears = allEntries
             .Select(t => t.AcademicYear)
             .Where(y => !string.IsNullOrWhiteSpace(y))
             .Select(y => y!)

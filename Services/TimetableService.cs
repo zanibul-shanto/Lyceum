@@ -93,6 +93,8 @@ public class TimetableService(LyceumDbContext context)
             .Where(t => t.Id != entry.Id &&
                         t.TeacherId == entry.TeacherId &&
                         t.DayOfWeek == entry.DayOfWeek &&
+                        t.Semester == entry.Semester &&
+                        t.AcademicYear == entry.AcademicYear &&
                         t.StartTime < entry.EndTime &&
                         t.EndTime > entry.StartTime)
             .FirstOrDefaultAsync();

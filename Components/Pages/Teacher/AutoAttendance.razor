@@ -34,7 +34,7 @@
                             <div class="col-12">
                                 <label class="form-label text-secondary fw-semibold small">Select Course</label>
                                 <RadzenDropDown TValue="int?" Value="@selectedCourseId" Data="@assignedCourses"
-                                                ValueProperty="Id"
+                                                TextProperty="Name" ValueProperty="Id"
                                                 Change="@(args => OnCourseChanged((int?)args))"
                                                 Placeholder="Choose a course..." class="w-100">
                                     <Template Context="course">

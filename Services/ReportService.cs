@@ -5,7 +5,7 @@ using QuestPDF.Infrastructure;
 
 namespace Lyceum.Services;
 
-public class ReportService(GradeService gradeService, AttendanceService attendanceService, StudentService studentService, Lyceum.Services.LyceumDbContext context)
+public class ReportService(GradeService gradeService, AttendanceService attendanceService, StudentService studentService, LyceumDbContext context)
 {
     public async Task<byte[]> GenerateStudentGradeReportAsync(int studentId)
     {

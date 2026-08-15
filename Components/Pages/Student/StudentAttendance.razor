@@ -37,7 +37,7 @@
                     <div class="col-12 col-md-4">
                         <div class="kpi-card h-100 p-4 text-center d-flex flex-column justify-content-center align-items-center">
                             <div class="kpi-label">Overall Attendance Rate</div>
-                            <div class="kpi-number my-2 text-primary font-outfit">@overallPercentage.ToString("0.1")%</div>
+                            <div class="kpi-number my-2 text-primary font-outfit">@overallPercentage.ToString("0.0")%</div>
                             <div class="kpi-footer text-secondary">
                                 Present & Late sessions included
                             </div>
@@ -59,7 +59,7 @@
                                                     <span class="fw-bold text-dark me-2 small">@item.CourseCode</span>
                                                     <span class="text-secondary small">@item.CourseName</span>
                                                 </div>
-                                                <span class="fw-semibold text-primary font-monospace small">@item.Rate.ToString("0.1")%</span>
+                                                <span class="fw-semibold text-primary font-monospace small">@item.Rate.ToString("0.0")%</span>
                                             </div>
                                             <div class="course-progress-bar-container" style="height: 10px;">
                                                 <div class="course-progress-bar-fill @GetProgressColorClass(item.Rate)" style="width: @item.Rate%;"></div>
